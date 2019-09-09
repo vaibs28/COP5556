@@ -51,28 +51,31 @@ public class Scanner {
 		while ((ch = r.read()) != -1) {
 			pos = pos + 1;
 
-			switch (ch) {
-			case ',':
-				token = new Token(Kind.COMMA, ",", pos, line);
-				return token;
-			case ':':
-				int nextChar = r.read();
-				// pos++;
-				if (nextChar == ':')
-					token = new Token(Kind.COLONCOLON, "::", pos, line);
-				else
-					token = new Token(Kind.COLON, ":", pos, line);
-				return token;
-			case '=':
-				nextChar = r.read();
-				if (nextChar == '=')
-					token = new Token(Kind.REL_EQEQ, "==", pos, line);
-				else
-					token = new Token(Kind.ASSIGN, "=", pos, line);
-				return token;
+			switch (state) {
+			case START:
+				switch (ch) {
+				case ',':
+					token = new Token(Kind.COMMA, ",", pos, line);
+					return token;
+				case ':':
+					int nextChar = r.read();
+					
+					if (nextChar == ':')
+						token = new Token(Kind.COLONCOLON, "::", pos, line);
+					else
+						token = new Token(Kind.COLON, ":", pos, line);
+					return token;
+				case '=':
+					nextChar = r.read();
+					if (nextChar == '=')
+						token = new Token(Kind.REL_EQEQ, "==", pos, line);
+					else
+						token = new Token(Kind.ASSIGN, "=", pos, line);
+					return token;
 
-			default:
-				throw new LexicalException("Useful error message");
+				default:
+					throw new LexicalException("Useful error message");
+				}
 			}
 		}
 		return token;
