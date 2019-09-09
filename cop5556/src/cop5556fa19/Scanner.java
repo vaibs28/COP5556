@@ -17,6 +17,8 @@ import static cop5556fa19.Token.Kind.*;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.List;
 
 import cop5556fa19.Token.Kind;
 
@@ -30,6 +32,7 @@ public class Scanner {
 
 	static int pos = -1;
 	static int line = -1;
+	List<Token> tokenList = new ArrayList<Token>();
 
 	@SuppressWarnings("serial")
 	public static class LexicalException extends Exception {
@@ -54,12 +57,13 @@ public class Scanner {
 			switch (state) {
 			case START:
 				switch (ch) {
+
 				case ',':
 					token = new Token(Kind.COMMA, ",", pos, line);
 					return token;
 				case ':':
 					int nextChar = r.read();
-					
+
 					if (nextChar == ':')
 						token = new Token(Kind.COLONCOLON, "::", pos, line);
 					else
@@ -72,9 +76,37 @@ public class Scanner {
 					else
 						token = new Token(Kind.ASSIGN, "=", pos, line);
 					return token;
+				case ';':
+					token = new Token(Kind.SEMI, ";", pos, line);
+					return token;
+				case '.':
+					nextChar = r.read();
+					if (nextChar == '.') {
+						nextChar = r.read();
+						if (nextChar == '.') {
+							token = new Token(Kind.DOTDOTDOT, "...", pos, line);
+							return token;
+						} else {
+							token = new Token(Kind.DOTDOT, "..", pos, line);
+							return token;
+						}
+					}
+					token = new Token(Kind.DOT, ".", pos, line);
+					return token;
 
+				case '(':
+					token = new Token(Kind.LPAREN, "(", pos, line);
+					return token;
+
+				case ')':
+					token = new Token(Kind.RPAREN, ")", pos, line);
+					return token;
+				case '[':
+					token = new Token(LSQUARE, "[", pos, line);
+					return token;
 				default:
 					throw new LexicalException("Useful error message");
+					
 				}
 			}
 		}
