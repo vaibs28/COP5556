@@ -84,7 +84,7 @@ class ScannerTest {
 	 */
 	@Test
 	void test2() throws Exception {
-		String file = "\\cop5556\\src\\testInputFiles\\test2.input";
+		String file = "testInputFiles/test2.input";
 		Reader r = new BufferedReader(new FileReader(file));
 		Scanner s = new Scanner(r);
 		assertThrows(LexicalException.class, () -> {
@@ -149,6 +149,42 @@ class ScannerTest {
 		assertEquals(t.kind, COMMA);
 		assertEquals(t.text, ",");
 
+	}
+	
+	//custom test for EOF
+	@Test
+	void test5() throws Exception{
+		Reader r = new StringReader("");
+		Scanner s = new Scanner(r);
+		Token t;
+		show(t = s.getNext());
+		assertEquals(t.kind, EOF);
+		assertEquals(t.text, "eof");
+	}
+	
+	//custom test for checking dots
+	
+	@Test
+	void test6() throws Exception{
+		Reader r = new StringReader("(,..)");
+		Scanner s = new Scanner(r);
+		Token t;
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, LPAREN);
+		assertEquals(t.text, "(");	
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, COMMA);
+		assertEquals(t.text, ",");
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, DOTDOT);
+		assertEquals(t.text, "..");
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, RPAREN);
+		assertEquals(t.text, ")");
 	}
 
 }
