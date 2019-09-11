@@ -140,10 +140,21 @@ public class Scanner {
 					pos++;
 					break;
 
+				case ':':
+					state = State.AFTER_COLON;
+					pos++;
+					break;
+
+				case '=':
+					state = State.AFTER_EQ;
+					pos++;
+					break;
+					
 				default:
 					throw new LexicalException("Useful error message");
 
 				}
+				break;
 				// Checking for tokens .. and ...
 			case AFTER_DOT:
 				// get the next character
@@ -151,7 +162,7 @@ public class Scanner {
 				if (ch == '.') {
 					state = State.AFTER_DOTDOT;
 					pos++;
-					//break;
+					break;
 				} else {
 					return new Token(Kind.DOT, ".", pos, line);
 				}
@@ -160,14 +171,32 @@ public class Scanner {
 				// get the next character
 				ch = sb.charAt(pos);
 				if (ch == '.') {
+					pos++;
 					return new Token(Kind.DOTDOTDOT, "...", pos, line);
 				} else {
 					return new Token(Kind.DOTDOT, "..", pos, line);
 				}
-			
+
+			case AFTER_COLON:
+				ch = sb.charAt(pos);
+				if (pos == ':') {
+					pos++;
+					return new Token(Kind.COLONCOLON, "::", pos, line);
+				}
+				else
+					return new Token(Kind.COLON, ":", pos, line);
+
+			case AFTER_EQ:
+				ch = sb.charAt(pos);
+				if (ch == '=') {
+					pos++;
+					return new Token(Kind.REL_EQEQ, "==", pos, line);
+				}
+				else
+					return new Token(Kind.ASSIGN, "=", pos, line);
 			}
 			i++;
-			
+
 		}
 		return new Token(EOF, "eof", pos, line);
 	}

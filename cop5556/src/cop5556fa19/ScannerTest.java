@@ -166,7 +166,7 @@ class ScannerTest {
 	
 	@Test
 	void test6() throws Exception{
-		Reader r = new StringReader("(,..)");
+		Reader r = new StringReader("(,...==)");
 		Scanner s = new Scanner(r);
 		Token t;
 		
@@ -179,8 +179,12 @@ class ScannerTest {
 		assertEquals(t.text, ",");
 		
 		show(t = s.getNext());
-		assertEquals(t.kind, DOTDOT);
-		assertEquals(t.text, "..");
+		assertEquals(t.kind, DOTDOTDOT);
+		assertEquals(t.text, "...");
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, REL_EQEQ);
+		assertEquals(t.text, "==");
 		
 		show(t = s.getNext());
 		assertEquals(t.kind, RPAREN);
