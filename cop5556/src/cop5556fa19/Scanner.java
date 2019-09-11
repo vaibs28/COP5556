@@ -28,12 +28,12 @@ public class Scanner {
 	static StringBuilder sb = new StringBuilder();
 
 	private enum State {
-		START, HAVE_EQ, HAVE_KW, AFTER_DOT, AFTER_EQ, AFTER_GT, AFTER_LT, AFTER_COLON, AFTER_DOTDOT
+		START, HAVE_EQ, HAVE_KW, AFTER_XOR, AFTER_DOT, AFTER_EQ, AFTER_GT, AFTER_LT, AFTER_COLON, AFTER_DOTDOT,
+		AFTER_DIV, AFTER_NOT
 	};
 
 	static int pos = 0;
 	static int line = 0;
-	List<Token> tokenList = new ArrayList<Token>();
 
 	@SuppressWarnings("serial")
 	public static class LexicalException extends Exception {
@@ -53,19 +53,16 @@ public class Scanner {
 		State state = State.START;
 		int ch;
 
-		while ((ch = r.read()) != -1) {
-			Character c = new Character((char) ch);
-			sb.append(Character.toString(c));
-		}
+		/*
+		 * while ((ch = r.read()) != -1) { Character c = new Character((char) ch);
+		 * sb.append(Character.toString(c)); }
+		 */
 
-		// System.out.println(sb.toString());
-		int i = 0;
-		while (i < sb.length()) {
+		while ((ch = r.read()) != -1) {
 
 			switch (state) {
 			case START:
 
-				ch = sb.charAt(pos);
 				// handling tokens with single character first
 				switch (ch) {
 
@@ -134,6 +131,16 @@ public class Scanner {
 					pos++;
 					return token;
 
+				case '&':
+					token = new Token(Kind.BIT_AMP, "&", pos, line);
+					pos++;
+					return token;
+
+				case '|':
+					token = new Token(Kind.BIT_OR, "|", pos, line);
+					pos++;
+					return token;
+
 				// checking for tokens that can have multiple characters
 				case '.':
 					state = State.AFTER_DOT;
@@ -149,16 +156,36 @@ public class Scanner {
 					state = State.AFTER_EQ;
 					pos++;
 					break;
-					
+
+				case '>':
+					state = State.AFTER_GT;
+					pos++;
+					break;
+
+				case '<':
+					state = State.AFTER_LT;
+					pos++;
+					break;
+
+				case '/':
+					state = State.AFTER_DIV;
+					pos++;
+					break;
+
+				case '~':
+					state = State.AFTER_NOT;
+					pos++;
+					break;
+
 				default:
 					throw new LexicalException("Useful error message");
 
 				}
 				break;
-				// Checking for tokens .. and ...
+			// Checking for tokens .. and ...
 			case AFTER_DOT:
 				// get the next character
-				ch = sb.charAt(pos);
+				//ch = sb.charAt(pos);
 				if (ch == '.') {
 					state = State.AFTER_DOTDOT;
 					pos++;
@@ -169,7 +196,7 @@ public class Scanner {
 
 			case AFTER_DOTDOT:
 				// get the next character
-				ch = sb.charAt(pos);
+				//ch = sb.charAt(pos);
 				if (ch == '.') {
 					pos++;
 					return new Token(Kind.DOTDOTDOT, "...", pos, line);
@@ -178,24 +205,60 @@ public class Scanner {
 				}
 
 			case AFTER_COLON:
-				ch = sb.charAt(pos);
+				//ch = sb.charAt(pos);
 				if (pos == ':') {
 					pos++;
 					return new Token(Kind.COLONCOLON, "::", pos, line);
-				}
-				else
+				} else
 					return new Token(Kind.COLON, ":", pos, line);
 
 			case AFTER_EQ:
-				ch = sb.charAt(pos);
+				//ch = sb.charAt(pos);
 				if (ch == '=') {
 					pos++;
 					return new Token(Kind.REL_EQEQ, "==", pos, line);
-				}
-				else
+				} else
 					return new Token(Kind.ASSIGN, "=", pos, line);
+
+			case AFTER_GT:
+				//ch = sb.charAt(pos);
+				if (ch == '=') {
+					pos++;
+					return new Token(Kind.REL_GE, ">=", pos, line);
+				} else if (ch == '>') {
+					pos++;
+					return new Token(Kind.BIT_SHIFTR, ">>", pos, line);
+				} else
+					return new Token(Kind.REL_GT, ">", pos, line);
+
+			case AFTER_LT:
+				//ch = sb.charAt(pos);
+				if (ch == '=') {
+					pos++;
+					return new Token(Kind.REL_LE, "<=", pos, line);
+				} else if (ch == '<') {
+					pos++;
+					return new Token(Kind.BIT_SHIFTL, "<<", pos, line);
+				} else
+					return new Token(Kind.REL_LT, "<", pos, line);
+
+			case AFTER_DIV:
+				//ch = sb.charAt(pos);
+				if (ch == '/') {
+					pos++;
+					return new Token(Kind.OP_DIVDIV, "//", pos, line);
+				} else
+					return new Token(Kind.OP_DIV, "/", pos, line);
+
+			case AFTER_NOT:
+				//ch = sb.charAt(pos);
+				if (ch == '=') {
+					pos++;
+					return new Token(Kind.REL_NOTEQ, "~=", pos, line);
+				} else
+					return new Token(Kind.BIT_XOR, "~", pos, line);
+
 			}
-			i++;
 
 		}
 		return new Token(EOF, "eof", pos, line);
