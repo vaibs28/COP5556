@@ -13,7 +13,9 @@
  */
 package cop5556fa19;
 
-import static cop5556fa19.Token.Kind.*;
+import static cop5556fa19.Token.Kind.EOF;
+import static cop5556fa19.Token.Kind.LCURLY;
+import static cop5556fa19.Token.Kind.LSQUARE;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -25,15 +27,19 @@ import cop5556fa19.Token.Kind;
 public class Scanner {
 
 	Reader r;
-	static StringBuilder sb = new StringBuilder();
+	StringBuilder sb = new StringBuilder();
+	String intLiteral = "";
+	int skippedChar = ' ';
 
 	private enum State {
-		START, HAVE_EQ, HAVE_KW, AFTER_XOR, AFTER_DOT, AFTER_EQ, AFTER_GT, AFTER_LT, AFTER_COLON, AFTER_DOTDOT,
-		AFTER_DIV, AFTER_NOT
+		START, HAS_INTLIT, HAS_STRLIT, HAS_KW, AFTER_XOR, AFTER_DOT, AFTER_EQ, AFTER_GT, AFTER_LT, AFTER_COLON,
+		AFTER_DOTDOT, AFTER_DIV, AFTER_NOT
 	};
 
-	static int pos = 0;
-	static int line = 0;
+	List<String> keywordList = new ArrayList<>();
+	int pos = -1;
+	int line = -1;
+	int ch = 0;
 
 	@SuppressWarnings("serial")
 	public static class LexicalException extends Exception {
@@ -47,181 +53,241 @@ public class Scanner {
 	}
 
 	public Token getNext() throws Exception {
-		// replace this code. Just for illustration
-		// if (r.read() == -1) { return new Token(EOF,"eof",0,0);}
+
 		Token token = null;
 		State state = State.START;
-		int ch;
 
-		/*
-		 * while ((ch = r.read()) != -1) { Character c = new Character((char) ch);
-		 * sb.append(Character.toString(c)); }
-		 */
+		while (token == null) {
 
-		while ((ch = r.read()) != -1) {
-
+			if (skippedChar == ' ')
+				ch = r.read();
 			switch (state) {
+
 			case START:
 
-				// handling tokens with single character first
+				// handling other tokens with single character first
+
 				switch (ch) {
 
+				case -1:
+					token = new Token(Kind.EOF, "eof", pos, line);
+					return token;
+					
 				case ',':
 					token = new Token(Kind.COMMA, ",", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case ';':
 					token = new Token(Kind.SEMI, ";", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '(':
 					token = new Token(Kind.LPAREN, "(", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case ')':
 					token = new Token(Kind.RPAREN, ")", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '[':
 					token = new Token(LSQUARE, "[", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '{':
 					token = new Token(LCURLY, "{", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '}':
 					token = new Token(Kind.RCURLY, "}", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '+':
 					token = new Token(Kind.OP_PLUS, "+", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '-':
 					token = new Token(Kind.OP_MINUS, "-", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '*':
 					token = new Token(Kind.OP_TIMES, "*", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '^':
 					token = new Token(Kind.OP_POW, "^", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '%':
 					token = new Token(Kind.OP_MOD, "%", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '#':
 					token = new Token(Kind.OP_HASH, "#", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '&':
 					token = new Token(Kind.BIT_AMP, "&", pos, line);
 					pos++;
+					skippedChar = ' ';
 					return token;
 
 				case '|':
 					token = new Token(Kind.BIT_OR, "|", pos, line);
 					pos++;
+					skippedChar = ' ';
+					return token;
+
+				case '0':
+					token = new Token(Kind.INTLIT, "0", pos, line);
 					return token;
 
 				// checking for tokens that can have multiple characters
 				case '.':
 					state = State.AFTER_DOT;
 					pos++;
+					skippedChar = ' ';
 					break;
 
 				case ':':
 					state = State.AFTER_COLON;
 					pos++;
+					skippedChar = ' ';
 					break;
 
 				case '=':
 					state = State.AFTER_EQ;
 					pos++;
+					skippedChar = ' ';
 					break;
 
 				case '>':
 					state = State.AFTER_GT;
 					pos++;
+					skippedChar = ' ';
 					break;
 
 				case '<':
 					state = State.AFTER_LT;
 					pos++;
+					skippedChar = ' ';
 					break;
 
 				case '/':
 					state = State.AFTER_DIV;
 					pos++;
+					skippedChar = ' ';
 					break;
 
 				case '~':
 					state = State.AFTER_NOT;
 					pos++;
+					skippedChar = ' ';
 					break;
 
+				case '\n':
+					line++;
+					skippedChar = ' ';
+					break;
+
+				// if not any of the above handled characters
 				default:
-					throw new LexicalException("Useful error message");
+					if (Character.isDigit(ch)) {
+						pos++;
+						sb.append((char) ch);
+						while(Character.isDigit(ch)) {
+							ch = r.read();
+							if(Character.getNumericValue(ch)!=-1)
+								sb.append((char)ch);
+							else {
+								skippedChar = ch;
+								token = new Token(Kind.INTLIT,sb.toString(),pos,line);
+							}
+						}
+						return token;
+
+					} else if (Character.isJavaIdentifierStart(ch)) {
+						state = State.HAS_KW;
+						pos++;
+
+					} else {
+						state = State.HAS_STRLIT;
+						pos++;
+
+					}
+					// throw new LexicalException("Useful error message");
 
 				}
 				break;
 			// Checking for tokens .. and ...
 			case AFTER_DOT:
-				// get the next character
-				//ch = sb.charAt(pos);
 				if (ch == '.') {
 					state = State.AFTER_DOTDOT;
 					pos++;
 					break;
 				} else {
+					skippedChar = ch;
+					state = State.START;
 					return new Token(Kind.DOT, ".", pos, line);
 				}
 
 			case AFTER_DOTDOT:
 				// get the next character
-				//ch = sb.charAt(pos);
+				// ch = sb.charAt(pos);
 				if (ch == '.') {
 					pos++;
 					return new Token(Kind.DOTDOTDOT, "...", pos, line);
 				} else {
+					skippedChar = ch;
+					state = State.START;
 					return new Token(Kind.DOTDOT, "..", pos, line);
 				}
 
 			case AFTER_COLON:
-				//ch = sb.charAt(pos);
-				if (pos == ':') {
+				// ch = sb.charAt(pos);
+				if (ch == ':') {
 					pos++;
 					return new Token(Kind.COLONCOLON, "::", pos, line);
-				} else
+				} else {
+					skippedChar = ch;
 					return new Token(Kind.COLON, ":", pos, line);
+				}
 
 			case AFTER_EQ:
-				//ch = sb.charAt(pos);
+				// ch = sb.charAt(pos);
 				if (ch == '=') {
 					pos++;
 					return new Token(Kind.REL_EQEQ, "==", pos, line);
 				} else
-					return new Token(Kind.ASSIGN, "=", pos, line);
+					return new Token(Kind.ASSIGN, "=", pos, line); // check this
 
 			case AFTER_GT:
-				//ch = sb.charAt(pos);
+				// ch = sb.charAt(pos);
 				if (ch == '=') {
 					pos++;
 					return new Token(Kind.REL_GE, ">=", pos, line);
@@ -232,7 +298,7 @@ public class Scanner {
 					return new Token(Kind.REL_GT, ">", pos, line);
 
 			case AFTER_LT:
-				//ch = sb.charAt(pos);
+				// ch = sb.charAt(pos);
 				if (ch == '=') {
 					pos++;
 					return new Token(Kind.REL_LE, "<=", pos, line);
@@ -243,7 +309,7 @@ public class Scanner {
 					return new Token(Kind.REL_LT, "<", pos, line);
 
 			case AFTER_DIV:
-				//ch = sb.charAt(pos);
+				// ch = sb.charAt(pos);
 				if (ch == '/') {
 					pos++;
 					return new Token(Kind.OP_DIVDIV, "//", pos, line);
@@ -251,12 +317,19 @@ public class Scanner {
 					return new Token(Kind.OP_DIV, "/", pos, line);
 
 			case AFTER_NOT:
-				//ch = sb.charAt(pos);
+				// ch = sb.charAt(pos);
 				if (ch == '=') {
 					pos++;
 					return new Token(Kind.REL_NOTEQ, "~=", pos, line);
 				} else
 					return new Token(Kind.BIT_XOR, "~", pos, line);
+
+			
+			case HAS_STRLIT:
+				break;
+
+			case HAS_KW:
+				break;
 
 			}
 

@@ -24,6 +24,7 @@ import org.junit.internal.Throwables;
 import org.junit.jupiter.api.Test;
 
 import cop5556fa19.Scanner.LexicalException;
+import cop5556fa19.Token.Kind;
 
 import static cop5556fa19.Token.Kind.*;
 
@@ -100,23 +101,24 @@ class ScannerTest {
 	 */
 	@Test
 	void test3() throws Exception {
-		Reader r = new StringReader(",,::==");
+		Reader r = new StringReader(",;:=");
 		Scanner s = new Scanner(r);
 		Token t;
 		show(t = s.getNext());
 		assertEquals(t.kind, COMMA);
 		assertEquals(t.text, ",");
+		
 		show(t = s.getNext());
-		assertEquals(t.kind, COMMA);
-		assertEquals(t.text, ",");
+		assertEquals(t.kind, SEMI);
+		assertEquals(t.text, ";");
 
 		show(t = s.getNext());
-		assertEquals(t.kind, COLONCOLON);
-		assertEquals(t.text, "::");
+		assertEquals(t.kind, COLON);
+		assertEquals(t.text, ":");
 
 		show(t = s.getNext());
-		assertEquals(t.kind, REL_EQEQ);
-		assertEquals(t.text, "==");
+		assertEquals(t.kind, ASSIGN);
+		assertEquals(t.text, "=");
 	}
 
 	// custom test for reading a single character only
@@ -150,10 +152,10 @@ class ScannerTest {
 		assertEquals(t.text, ",");
 
 	}
-	
-	//custom test for EOF
+
+	// custom test for EOF
 	@Test
-	void test5() throws Exception{
+	void test5() throws Exception {
 		Reader r = new StringReader("");
 		Scanner s = new Scanner(r);
 		Token t;
@@ -161,34 +163,136 @@ class ScannerTest {
 		assertEquals(t.kind, EOF);
 		assertEquals(t.text, "eof");
 	}
-	
-	//custom test for checking dots
-	
+
+	// custom test for checking dots
+
 	@Test
-	void test6() throws Exception{
+	void test6() throws Exception {
 		Reader r = new StringReader("(,...==)");
 		Scanner s = new Scanner(r);
 		Token t;
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, LPAREN);
-		assertEquals(t.text, "(");	
-		
+		assertEquals(t.text, "(");
+
 		show(t = s.getNext());
 		assertEquals(t.kind, COMMA);
 		assertEquals(t.text, ",");
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, DOTDOTDOT);
 		assertEquals(t.text, "...");
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, REL_EQEQ);
 		assertEquals(t.text, "==");
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, RPAREN);
 		assertEquals(t.text, ")");
+	}
+
+	// test to check for << , >> and //
+	@Test
+	void test7() throws Exception {
+		Reader r = new StringReader("+-+~=#<<>>///");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_PLUS);
+		assertEquals(t.text, "+");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_MINUS);
+		assertEquals(t.text, "-");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_PLUS);
+		assertEquals(t.text, "+");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, REL_NOTEQ);
+		assertEquals(t.text, "~=");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_HASH);
+		assertEquals(t.text, "#");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, BIT_SHIFTL);
+		assertEquals(t.text, "<<");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, BIT_SHIFTR);
+		assertEquals(t.text, ">>");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_DIVDIV);
+		assertEquals(t.text, "//");
+	}
+
+	@Test
+	void test8() throws Exception {
+		Reader r = new StringReader("1234::+-1234..1234");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		show(t = s.getNext());
+		assertEquals(t.kind, INTLIT);
+		assertEquals(t.text, "1234"); 
+
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, COLONCOLON);
+		assertEquals(t.text, "::");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_PLUS);
+		assertEquals(t.text, "+");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_MINUS);
+		assertEquals(t.text, "-");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, INTLIT);
+		assertEquals(t.text, "1234"); 
+
+		show(t = s.getNext());
+		assertEquals(t.kind, DOTDOT);
+		assertEquals(t.text, "..");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, INTLIT);
+		assertEquals(t.text, "1234"); 
+
+	}
+	
+	@Test
+	void test9() throws Exception {
+		Reader r = new StringReader(".+-123");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		show(t = s.getNext());
+		assertEquals(t.kind, DOT);
+		assertEquals(t.text, "."); 
+		
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_PLUS);
+		assertEquals(t.text, "+");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_MINUS);
+		assertEquals(t.text, "-"); 
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, INTLIT);
+		assertEquals(t.text, "123"); 
+
 	}
 
 }
