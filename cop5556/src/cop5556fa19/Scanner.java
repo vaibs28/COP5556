@@ -72,7 +72,7 @@ public class Scanner {
 				case -1:
 					token = new Token(Kind.EOF, "eof", pos, line);
 					return token;
-					
+
 				case ',':
 					token = new Token(Kind.COMMA, ",", pos, line);
 					pos++;
@@ -220,24 +220,47 @@ public class Scanner {
 					if (Character.isDigit(ch)) {
 						pos++;
 						sb.append((char) ch);
-						while(Character.isDigit(ch)) {
+						while (Character.isDigit(ch)) {
 							ch = r.read();
-							if(Character.getNumericValue(ch)!=-1)
-								sb.append((char)ch);
+							if (Character.getNumericValue(ch) != -1)
+								sb.append((char) ch);
 							else {
 								skippedChar = ch;
-								token = new Token(Kind.INTLIT,sb.toString(),pos,line);
+								token = new Token(Kind.INTLIT, sb.toString(), pos, line);
 							}
 						}
 						return token;
 
 					} else if (Character.isJavaIdentifierStart(ch)) {
-						state = State.HAS_KW;
 						pos++;
+						if (ch == '\'' || ch == '"') {
+							while (ch != '"' || ch != '\'') {
+								ch = r.read();
+								sb.append((char) ch);
+							}
+							token = new Token(Kind.STRINGLIT, sb.toString(), pos, line);
+						}
+						return token;
 
 					} else {
-						state = State.HAS_STRLIT;
+						// state = State.HAS_STRLIT;
 						pos++;
+						// sb.append((char) ch);
+						if (ch == '\'' || ch == '"') {
+							ch = r.read();
+							sb.append((char) ch);
+
+							while ((ch = r.read()) != -1 && (ch != '"' || ch != '\'')) {
+								if (ch != 34 && ch != 39)
+									sb.append((char) ch);
+								else {
+									skippedChar = ch;
+									token = new Token(Kind.STRINGLIT, sb.toString(), pos, line);
+									return token;
+								}
+							}
+
+						}
 
 					}
 					// throw new LexicalException("Useful error message");
@@ -324,7 +347,6 @@ public class Scanner {
 				} else
 					return new Token(Kind.BIT_XOR, "~", pos, line);
 
-			
 			case HAS_STRLIT:
 				break;
 

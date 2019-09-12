@@ -107,7 +107,7 @@ class ScannerTest {
 		show(t = s.getNext());
 		assertEquals(t.kind, COMMA);
 		assertEquals(t.text, ",");
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, SEMI);
 		assertEquals(t.text, ";");
@@ -241,9 +241,8 @@ class ScannerTest {
 
 		show(t = s.getNext());
 		assertEquals(t.kind, INTLIT);
-		assertEquals(t.text, "1234"); 
+		assertEquals(t.text, "1234");
 
-		
 		show(t = s.getNext());
 		assertEquals(t.kind, COLONCOLON);
 		assertEquals(t.text, "::");
@@ -258,7 +257,7 @@ class ScannerTest {
 
 		show(t = s.getNext());
 		assertEquals(t.kind, INTLIT);
-		assertEquals(t.text, "1234"); 
+		assertEquals(t.text, "1234");
 
 		show(t = s.getNext());
 		assertEquals(t.kind, DOTDOT);
@@ -266,10 +265,10 @@ class ScannerTest {
 
 		show(t = s.getNext());
 		assertEquals(t.kind, INTLIT);
-		assertEquals(t.text, "1234"); 
+		assertEquals(t.text, "1234");
 
 	}
-	
+
 	@Test
 	void test9() throws Exception {
 		Reader r = new StringReader(".+-123");
@@ -278,21 +277,42 @@ class ScannerTest {
 
 		show(t = s.getNext());
 		assertEquals(t.kind, DOT);
-		assertEquals(t.text, "."); 
-		
-		
+		assertEquals(t.text, ".");
+
 		show(t = s.getNext());
 		assertEquals(t.kind, OP_PLUS);
 		assertEquals(t.text, "+");
 
 		show(t = s.getNext());
 		assertEquals(t.kind, OP_MINUS);
-		assertEquals(t.text, "-"); 
-		
+		assertEquals(t.text, "-");
+
 		show(t = s.getNext());
 		assertEquals(t.kind, INTLIT);
-		assertEquals(t.text, "123"); 
+		assertEquals(t.text, "123");
 
 	}
 
+	// test for reading string literal
+	@Test
+	void test10() throws Exception {
+		Reader r = new StringReader("-..\"abc123\"");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_MINUS);
+		assertEquals(t.text, "-");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, DOTDOT);
+		assertEquals(t.text, "..");
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, STRINGLIT);
+		assertEquals(t.text, "abc123");
+		
+		
+
+	}
 }
