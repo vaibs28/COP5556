@@ -20,7 +20,9 @@ import static cop5556fa19.Token.Kind.LSQUARE;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import cop5556fa19.Token.Kind;
 
@@ -36,7 +38,7 @@ public class Scanner {
 		AFTER_DOTDOT, AFTER_DIV, AFTER_NOT
 	};
 
-	List<String> keywordList = new ArrayList<>();
+	Map<String, Token.Kind> keywordMap = new HashMap<>();
 	int pos = -1;
 	int line = -1;
 	int ch = 0;
@@ -54,6 +56,7 @@ public class Scanner {
 
 	public Token getNext() throws Exception {
 
+		initKeywordMap();
 		Token token = null;
 		State state = State.START;
 
@@ -232,13 +235,16 @@ public class Scanner {
 						return token;
 
 					} else if (Character.isJavaIdentifierStart(ch)) {
-						pos++;
-						if (ch == '\'' || ch == '"') {
-							while (ch != '"' || ch != '\'') {
-								ch = r.read();
-								sb.append((char) ch);
-							}
-							token = new Token(Kind.STRINGLIT, sb.toString(), pos, line);
+						sb.append((char) ch);
+						while ((ch = r.read()) != -1 && Character.isJavaIdentifierPart(ch)) {
+							sb.append((char) ch);
+						}
+						if (keywordMap.containsKey(sb.toString())) {
+							Token.Kind value = keywordMap.get(sb.toString());
+							token = new Token(value, sb.toString(), pos, line);
+						}
+						else {
+							token = new Token(Kind.NAME,sb.toString(),pos,line);
 						}
 						return token;
 
@@ -357,6 +363,32 @@ public class Scanner {
 
 		}
 		return new Token(EOF, "eof", pos, line);
+	}
+
+	private void initKeywordMap() {
+		keywordMap.put("and", Kind.KW_and);
+		keywordMap.put("break", Kind.KW_break);
+		keywordMap.put("do", Kind.KW_do);
+		keywordMap.put("else", Kind.KW_else);
+		keywordMap.put("elseif", Kind.KW_elseif);
+		keywordMap.put("end", Kind.KW_end);
+		keywordMap.put("false", Kind.KW_false);
+		keywordMap.put("for", Kind.KW_for);
+		keywordMap.put("function", Kind.KW_function);
+		keywordMap.put("goto", Kind.KW_goto);
+		keywordMap.put("if", Kind.KW_if);
+		keywordMap.put("in", Kind.KW_in);
+		keywordMap.put("local", Kind.KW_local);
+		keywordMap.put("nil", Kind.KW_nil);
+		keywordMap.put("not", Kind.KW_not);
+		keywordMap.put("or", Kind.KW_or);
+		keywordMap.put("repeat", Kind.KW_repeat);
+		keywordMap.put("return", Kind.KW_return);
+		keywordMap.put("then", Kind.KW_then);
+		keywordMap.put("true", Kind.KW_true);
+		keywordMap.put("until", Kind.KW_until);
+		keywordMap.put("while", Kind.KW_while);
+		
 	}
 
 }

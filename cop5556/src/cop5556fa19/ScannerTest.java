@@ -311,8 +311,18 @@ class ScannerTest {
 		show(t = s.getNext());
 		assertEquals(t.kind, STRINGLIT);
 		assertEquals(t.text, "abc123");
-		
-		
 
 	}
+	
+	@Test
+	void test11() throws Exception {
+		Reader r = new StringReader("while");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		show(t = s.getNext());
+		assertEquals(t.kind, KW_while);
+		assertEquals(t.text, "while");
+	}
+	
 }
