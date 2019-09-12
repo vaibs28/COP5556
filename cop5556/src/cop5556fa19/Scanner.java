@@ -59,7 +59,7 @@ public class Scanner {
 		initKeywordMap();
 		Token token = null;
 		State state = State.START;
-
+		sb = new StringBuilder();
 		while (token == null) {
 
 			if (skippedChar == ' ')
@@ -242,16 +242,14 @@ public class Scanner {
 						if (keywordMap.containsKey(sb.toString())) {
 							Token.Kind value = keywordMap.get(sb.toString());
 							token = new Token(value, sb.toString(), pos, line);
+						} else {
+							token = new Token(Kind.NAME, sb.toString(), pos, line);
 						}
-						else {
-							token = new Token(Kind.NAME,sb.toString(),pos,line);
-						}
+						skippedChar = ch;
 						return token;
 
 					} else {
-						// state = State.HAS_STRLIT;
 						pos++;
-						// sb.append((char) ch);
 						if (ch == '\'' || ch == '"') {
 							ch = r.read();
 							sb.append((char) ch);
@@ -286,8 +284,6 @@ public class Scanner {
 				}
 
 			case AFTER_DOTDOT:
-				// get the next character
-				// ch = sb.charAt(pos);
 				if (ch == '.') {
 					pos++;
 					return new Token(Kind.DOTDOTDOT, "...", pos, line);
@@ -298,7 +294,7 @@ public class Scanner {
 				}
 
 			case AFTER_COLON:
-				// ch = sb.charAt(pos);
+
 				if (ch == ':') {
 					pos++;
 					return new Token(Kind.COLONCOLON, "::", pos, line);
@@ -308,57 +304,60 @@ public class Scanner {
 				}
 
 			case AFTER_EQ:
-				// ch = sb.charAt(pos);
+				
 				if (ch == '=') {
 					pos++;
 					return new Token(Kind.REL_EQEQ, "==", pos, line);
-				} else
-					return new Token(Kind.ASSIGN, "=", pos, line); // check this
+				} else {
+					skippedChar = ch;
+					return new Token(Kind.ASSIGN, "=", pos, line);
+				} // check this
 
 			case AFTER_GT:
-				// ch = sb.charAt(pos);
+			
 				if (ch == '=') {
 					pos++;
 					return new Token(Kind.REL_GE, ">=", pos, line);
 				} else if (ch == '>') {
 					pos++;
 					return new Token(Kind.BIT_SHIFTR, ">>", pos, line);
-				} else
+				} else {
+					skippedChar = ch;
 					return new Token(Kind.REL_GT, ">", pos, line);
+				}
 
 			case AFTER_LT:
-				// ch = sb.charAt(pos);
+				
 				if (ch == '=') {
 					pos++;
 					return new Token(Kind.REL_LE, "<=", pos, line);
 				} else if (ch == '<') {
 					pos++;
 					return new Token(Kind.BIT_SHIFTL, "<<", pos, line);
-				} else
+				} else {
+					skippedChar = ch;
 					return new Token(Kind.REL_LT, "<", pos, line);
+				}
 
 			case AFTER_DIV:
-				// ch = sb.charAt(pos);
+				
 				if (ch == '/') {
 					pos++;
 					return new Token(Kind.OP_DIVDIV, "//", pos, line);
-				} else
+				} else {
+					skippedChar = ch;
 					return new Token(Kind.OP_DIV, "/", pos, line);
+				}
 
 			case AFTER_NOT:
-				// ch = sb.charAt(pos);
+				
 				if (ch == '=') {
 					pos++;
 					return new Token(Kind.REL_NOTEQ, "~=", pos, line);
-				} else
+				} else {
+					skippedChar = ch;
 					return new Token(Kind.BIT_XOR, "~", pos, line);
-
-			case HAS_STRLIT:
-				break;
-
-			case HAS_KW:
-				break;
-
+				}
 			}
 
 		}
@@ -388,7 +387,7 @@ public class Scanner {
 		keywordMap.put("true", Kind.KW_true);
 		keywordMap.put("until", Kind.KW_until);
 		keywordMap.put("while", Kind.KW_while);
-		
+
 	}
 
 }

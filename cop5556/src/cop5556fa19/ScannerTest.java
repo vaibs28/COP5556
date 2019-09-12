@@ -196,7 +196,7 @@ class ScannerTest {
 	// test to check for << , >> and //
 	@Test
 	void test7() throws Exception {
-		Reader r = new StringReader("+-+~=#<<>>///");
+		Reader r = new StringReader("+-+=#<<>//");
 		Scanner s = new Scanner(r);
 		Token t;
 
@@ -213,8 +213,8 @@ class ScannerTest {
 		assertEquals(t.text, "+");
 
 		show(t = s.getNext());
-		assertEquals(t.kind, REL_NOTEQ);
-		assertEquals(t.text, "~=");
+		assertEquals(t.kind, ASSIGN);
+		assertEquals(t.text, "=");
 
 		show(t = s.getNext());
 		assertEquals(t.kind, OP_HASH);
@@ -225,8 +225,8 @@ class ScannerTest {
 		assertEquals(t.text, "<<");
 
 		show(t = s.getNext());
-		assertEquals(t.kind, BIT_SHIFTR);
-		assertEquals(t.text, ">>");
+		assertEquals(t.kind, Kind.REL_GT);
+		assertEquals(t.text, ">");
 
 		show(t = s.getNext());
 		assertEquals(t.kind, OP_DIVDIV);
@@ -325,4 +325,40 @@ class ScannerTest {
 		assertEquals(t.text, "while");
 	}
 	
+	@Test
+	void test12() throws Exception {
+		Reader r = new StringReader("\"while123......++==abc\"");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		show(t = s.getNext());
+		assertEquals(t.kind, NAME);
+		assertEquals(t.text, "while123");
+		
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, DOTDOTDOT);
+		assertEquals(t.text, "...");
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, DOTDOTDOT);
+		assertEquals(t.text, "...");
+		
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_PLUS);
+		assertEquals(t.text, "+");
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, OP_PLUS);
+		assertEquals(t.text, "+");
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, REL_EQEQ);
+		assertEquals(t.text, "==");
+		
+		show(t = s.getNext());
+		assertEquals(t.kind, STRINGLIT);
+		assertEquals(t.text, "abc");
+	}
 }
