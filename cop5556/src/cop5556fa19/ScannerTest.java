@@ -307,13 +307,13 @@ class ScannerTest {
 		show(t = s.getNext());
 		assertEquals(t.kind, DOTDOT);
 		assertEquals(t.text, "..");
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, STRINGLIT);
 		assertEquals(t.text, "abc123");
 
 	}
-	
+
 	@Test
 	void test11() throws Exception {
 		Reader r = new StringReader("while");
@@ -324,41 +324,98 @@ class ScannerTest {
 		assertEquals(t.kind, KW_while);
 		assertEquals(t.text, "while");
 	}
-	
+
 	@Test
 	void test12() throws Exception {
-		Reader r = new StringReader("\"while123......++==abc\"");
+		Reader r = new StringReader("while123......++==abc");
 		Scanner s = new Scanner(r);
 		Token t;
 
 		show(t = s.getNext());
 		assertEquals(t.kind, NAME);
 		assertEquals(t.text, "while123");
-		
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, DOTDOTDOT);
 		assertEquals(t.text, "...");
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, DOTDOTDOT);
 		assertEquals(t.text, "...");
-		
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, OP_PLUS);
 		assertEquals(t.text, "+");
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, OP_PLUS);
 		assertEquals(t.text, "+");
-		
+
 		show(t = s.getNext());
 		assertEquals(t.kind, REL_EQEQ);
 		assertEquals(t.text, "==");
-		
+
 		show(t = s.getNext());
-		assertEquals(t.kind, STRINGLIT);
+		assertEquals(t.kind, NAME);
 		assertEquals(t.text, "abc");
 	}
+
+	@Test
+	void test13() throws Exception {
+		Reader r = new StringReader("0and");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		show(t = s.getNext());
+		assertEquals(t.kind, INTLIT);
+		assertEquals(t.text, "0");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, KW_and);
+		assertEquals(t.text, "and");
+
+	}
+
+	@Test
+	void test14() throws Exception {
+		Reader r = new StringReader("1abc");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		show(t = s.getNext());
+		assertEquals(t.kind, INTLIT);
+		assertEquals(t.text, "1");
+
+		show(t = s.getNext());
+		assertEquals(t.kind, NAME);
+		assertEquals(t.text, "abc");
+
+	}
+
+	//integer literal range test
+	@Test
+	void test15() throws Exception {
+		Reader r = new StringReader("21474836478");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		assertThrows(LexicalException.class, () -> {
+			s.getNext();
+		});
+	}
+	
+	//invalid token test
+	@Test
+	void test16() throws Exception {
+		Reader r = new StringReader("@@");
+		Scanner s = new Scanner(r);
+		Token t;
+
+		assertThrows(LexicalException.class, () -> {
+			s.getNext();
+		});
+	}
+	
+	
+
 }

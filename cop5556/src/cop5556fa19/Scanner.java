@@ -225,16 +225,27 @@ public class Scanner {
 						sb.append((char) ch);
 						while (Character.isDigit(ch)) {
 							ch = r.read();
-							if (Character.getNumericValue(ch) != -1)
+							if (Character.getNumericValue(ch) != -1 && Character.getNumericValue(ch)>=0 && Character.getNumericValue(ch)<=9)
 								sb.append((char) ch);
 							else {
 								skippedChar = ch;
-								token = new Token(Kind.INTLIT, sb.toString(), pos, line);
+								String intStr = sb.toString();
+								int intVal=0;
+								try {
+									intVal = Integer.parseInt(intStr);
+								}
+								catch(NumberFormatException e) {
+									throw new LexicalException("Integer out of range");
+								}
+								if(intVal<=Integer.MAX_VALUE || intVal>=Integer.MIN_VALUE)
+									token = new Token(Kind.INTLIT, sb.toString(), pos, line);
+
 							}
 						}
 						return token;
 
 					} else if (Character.isJavaIdentifierStart(ch)) {
+						pos++;
 						sb.append((char) ch);
 						while ((ch = r.read()) != -1 && Character.isJavaIdentifierPart(ch)) {
 							sb.append((char) ch);
@@ -267,15 +278,15 @@ public class Scanner {
 						}
 
 					}
-					// throw new LexicalException("Useful error message");
+					throw new LexicalException("Invalid token");
 
 				}
 				break;
 			// Checking for tokens .. and ...
 			case AFTER_DOT:
+				pos++;
 				if (ch == '.') {
 					state = State.AFTER_DOTDOT;
-					pos++;
 					break;
 				} else {
 					skippedChar = ch;
@@ -284,8 +295,8 @@ public class Scanner {
 				}
 
 			case AFTER_DOTDOT:
+				pos++;
 				if (ch == '.') {
-					pos++;
 					return new Token(Kind.DOTDOTDOT, "...", pos, line);
 				} else {
 					skippedChar = ch;
@@ -294,9 +305,8 @@ public class Scanner {
 				}
 
 			case AFTER_COLON:
-
+				pos++;
 				if (ch == ':') {
-					pos++;
 					return new Token(Kind.COLONCOLON, "::", pos, line);
 				} else {
 					skippedChar = ch;
@@ -304,9 +314,8 @@ public class Scanner {
 				}
 
 			case AFTER_EQ:
-				
+				pos++;
 				if (ch == '=') {
-					pos++;
 					return new Token(Kind.REL_EQEQ, "==", pos, line);
 				} else {
 					skippedChar = ch;
@@ -314,12 +323,10 @@ public class Scanner {
 				} // check this
 
 			case AFTER_GT:
-			
+				pos++;
 				if (ch == '=') {
-					pos++;
 					return new Token(Kind.REL_GE, ">=", pos, line);
 				} else if (ch == '>') {
-					pos++;
 					return new Token(Kind.BIT_SHIFTR, ">>", pos, line);
 				} else {
 					skippedChar = ch;
@@ -327,12 +334,10 @@ public class Scanner {
 				}
 
 			case AFTER_LT:
-				
+				pos++;
 				if (ch == '=') {
-					pos++;
 					return new Token(Kind.REL_LE, "<=", pos, line);
 				} else if (ch == '<') {
-					pos++;
 					return new Token(Kind.BIT_SHIFTL, "<<", pos, line);
 				} else {
 					skippedChar = ch;
@@ -340,9 +345,8 @@ public class Scanner {
 				}
 
 			case AFTER_DIV:
-				
+				pos++;
 				if (ch == '/') {
-					pos++;
 					return new Token(Kind.OP_DIVDIV, "//", pos, line);
 				} else {
 					skippedChar = ch;
@@ -350,9 +354,8 @@ public class Scanner {
 				}
 
 			case AFTER_NOT:
-				
+				pos++;
 				if (ch == '=') {
-					pos++;
 					return new Token(Kind.REL_NOTEQ, "~=", pos, line);
 				} else {
 					skippedChar = ch;
