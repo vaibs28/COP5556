@@ -127,6 +127,11 @@ public class Scanner {
 		    skippedChar = ' ';
 		    return token;
 
+		case ']':
+		    token = new Token(Kind.RSQUARE, "]", pos, line);
+
+		    skippedChar = ' ';
+		    return token;
 		case '{':
 		    token = new Token(LCURLY, "{", pos, line);
 
@@ -337,6 +342,7 @@ public class Scanner {
 		    return new Token(Kind.COLONCOLON, "::", pos, line);
 		} else {
 		    skippedChar = ch;
+		    state = State.START;
 		    return new Token(Kind.COLON, ":", pos, line);
 		}
 
@@ -346,6 +352,7 @@ public class Scanner {
 		    return new Token(Kind.REL_EQEQ, "==", pos, line);
 		} else {
 		    skippedChar = ch;
+		    state = State.START;
 		    return new Token(Kind.ASSIGN, "=", pos, line);
 		}
 
@@ -357,6 +364,7 @@ public class Scanner {
 		    return new Token(Kind.BIT_SHIFTR, ">>", pos, line);
 		} else {
 		    skippedChar = ch;
+		    state = State.START;
 		    return new Token(Kind.REL_GT, ">", pos, line);
 		}
 
@@ -368,6 +376,7 @@ public class Scanner {
 		    return new Token(Kind.BIT_SHIFTL, "<<", pos, line);
 		} else {
 		    skippedChar = ch;
+		    state = State.START;
 		    return new Token(Kind.REL_LT, "<", pos, line);
 		}
 
@@ -377,6 +386,7 @@ public class Scanner {
 		    return new Token(Kind.OP_DIVDIV, "//", pos, line);
 		} else {
 		    skippedChar = ch;
+		    state = State.START;
 		    return new Token(Kind.OP_DIV, "/", pos, line);
 		}
 
@@ -386,6 +396,7 @@ public class Scanner {
 		    return new Token(Kind.REL_NOTEQ, "~=", pos, line);
 		} else {
 		    skippedChar = ch;
+		    state = State.START;
 		    return new Token(Kind.BIT_XOR, "~", pos, line);
 		}
 
