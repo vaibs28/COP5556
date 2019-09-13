@@ -28,369 +28,423 @@ import cop5556fa19.Token.Kind;
 
 public class Scanner {
 
-	Reader r;
-	StringBuilder sb = new StringBuilder();
-	String intLiteral = "";
-	int skippedChar = ' ';
+    Reader r;
+    StringBuilder sb = new StringBuilder();
+    String intLiteral = "";
+    int skippedChar = ' ';
 
-	private enum State {
-		START, HAS_INTLIT, HAS_STRLIT, HAS_KW, AFTER_XOR, AFTER_DOT, AFTER_EQ, AFTER_GT, AFTER_LT, AFTER_COLON,
-		AFTER_DOTDOT, AFTER_DIV, AFTER_NOT
-	};
+    private enum State {
+	START, HAS_INTLIT, HAS_STRLIT, HAS_KW, AFTER_XOR, AFTER_DOT, AFTER_EQ, AFTER_GT, AFTER_LT, AFTER_COLON,
+	AFTER_DOTDOT, AFTER_DIV, AFTER_NOT, AFTER_CR, AFTER_BACKSLASH, AFTER_HYPHEN
+    };
 
-	Map<String, Token.Kind> keywordMap = new HashMap<>();
-	int pos = -1;
-	int line = -1;
-	int ch = 0;
+    Map<String, Token.Kind> keywordMap = new HashMap<>();
+    int pos = -1;
+    int line = -1;
+    int ch = 0;
 
-	@SuppressWarnings("serial")
-	public static class LexicalException extends Exception {
-		public LexicalException(String arg0) {
-			super(arg0);
-		}
+    @SuppressWarnings("serial")
+    public static class LexicalException extends Exception {
+	public LexicalException(String arg0) {
+	    super(arg0);
 	}
+    }
 
-	public Scanner(Reader r) throws IOException {
-		this.r = r;
-	}
+    public Scanner(Reader r) throws IOException {
+	this.r = r;
+    }
 
-	public Token getNext() throws Exception {
+    public Token getNext() throws Exception {
 
-		initKeywordMap();
-		Token token = null;
-		State state = State.START;
-		sb = new StringBuilder();
-		while (token == null) {
+	initKeywordMap();
+	Token token = null;
+	State state = State.START;
+	sb = new StringBuilder();
+	while (token == null) {
 
-			if (skippedChar == ' ')
-				ch = r.read();
-			switch (state) {
+	    pos++;
+	    if (skippedChar == ' ') {
+		ch = r.read();
+	    }
+	    switch (state) {
 
-			case START:
+	    case START:
 
-				// handling other tokens with single character first
+		// handling other tokens with single character first
 
-				switch (ch) {
+		switch (ch) {
 
-				case -1:
-					token = new Token(Kind.EOF, "eof", pos, line);
-					return token;
+		case -1:
+		    token = new Token(Kind.EOF, "eof", pos, line);
+		    return token;
 
-				case ',':
-					token = new Token(Kind.COMMA, ",", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case ' ':
+		    state = State.START;
+		    break;
 
-				case ';':
-					token = new Token(Kind.SEMI, ";", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case '\t':
+		    state = State.START;
+		    break;
 
-				case '(':
-					token = new Token(Kind.LPAREN, "(", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case '\f':
+		    state = State.START;
+		    break;
 
-				case ')':
-					token = new Token(Kind.RPAREN, ")", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case '\n':
+		    state = State.START;
+		    break;
 
-				case '[':
-					token = new Token(LSQUARE, "[", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case '\r':
+		    state = State.AFTER_CR;
+		    break;
 
-				case '{':
-					token = new Token(LCURLY, "{", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case ',':
+		    token = new Token(Kind.COMMA, ",", pos, line);
+		    skippedChar = ' ';
+		    return token;
 
-				case '}':
-					token = new Token(Kind.RCURLY, "}", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case ';':
+		    token = new Token(Kind.SEMI, ";", pos, line);
 
-				case '+':
-					token = new Token(Kind.OP_PLUS, "+", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		    skippedChar = ' ';
+		    return token;
 
-				case '-':
-					token = new Token(Kind.OP_MINUS, "-", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case '(':
+		    token = new Token(Kind.LPAREN, "(", pos, line);
 
-				case '*':
-					token = new Token(Kind.OP_TIMES, "*", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		    skippedChar = ' ';
+		    return token;
 
-				case '^':
-					token = new Token(Kind.OP_POW, "^", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case ')':
+		    token = new Token(Kind.RPAREN, ")", pos, line);
 
-				case '%':
-					token = new Token(Kind.OP_MOD, "%", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		    skippedChar = ' ';
+		    return token;
 
-				case '#':
-					token = new Token(Kind.OP_HASH, "#", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case '[':
+		    token = new Token(LSQUARE, "[", pos, line);
 
-				case '&':
-					token = new Token(Kind.BIT_AMP, "&", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		    skippedChar = ' ';
+		    return token;
 
-				case '|':
-					token = new Token(Kind.BIT_OR, "|", pos, line);
-					pos++;
-					skippedChar = ' ';
-					return token;
+		case '{':
+		    token = new Token(LCURLY, "{", pos, line);
 
-				case '0':
-					token = new Token(Kind.INTLIT, "0", pos, line);
-					return token;
+		    skippedChar = ' ';
+		    return token;
 
-				// checking for tokens that can have multiple characters
-				case '.':
-					state = State.AFTER_DOT;
-					pos++;
-					skippedChar = ' ';
-					break;
+		case '}':
+		    token = new Token(Kind.RCURLY, "}", pos, line);
 
-				case ':':
-					state = State.AFTER_COLON;
-					pos++;
-					skippedChar = ' ';
-					break;
+		    skippedChar = ' ';
+		    return token;
 
-				case '=':
-					state = State.AFTER_EQ;
-					pos++;
-					skippedChar = ' ';
-					break;
+		case '+':
+		    token = new Token(Kind.OP_PLUS, "+", pos, line);
 
-				case '>':
-					state = State.AFTER_GT;
-					pos++;
-					skippedChar = ' ';
-					break;
+		    skippedChar = ' ';
+		    return token;
 
-				case '<':
-					state = State.AFTER_LT;
-					pos++;
-					skippedChar = ' ';
-					break;
+		case '-':
+		    state = State.AFTER_HYPHEN;
+		    /*
+		     * token = new Token(Kind.OP_MINUS, "-", pos, line); pos++; skippedChar = ' ';
+		     * return token;
+		     */
 
-				case '/':
-					state = State.AFTER_DIV;
-					pos++;
-					skippedChar = ' ';
-					break;
+		    skippedChar = ' ';
+		    break;
 
-				case '~':
-					state = State.AFTER_NOT;
-					pos++;
-					skippedChar = ' ';
-					break;
+		case '*':
+		    token = new Token(Kind.OP_TIMES, "*", pos, line);
 
-				case '\n':
-					line++;
-					skippedChar = ' ';
-					break;
+		    skippedChar = ' ';
+		    return token;
 
-				// if not any of the above handled characters
-				default:
-					if (Character.isDigit(ch)) {
-						pos++;
-						sb.append((char) ch);
-						while (Character.isDigit(ch)) {
-							ch = r.read();
-							if (Character.getNumericValue(ch) != -1 && Character.getNumericValue(ch)>=0 && Character.getNumericValue(ch)<=9)
-								sb.append((char) ch);
-							else {
-								skippedChar = ch;
-								String intStr = sb.toString();
-								int intVal=0;
-								try {
-									intVal = Integer.parseInt(intStr);
-								}
-								catch(NumberFormatException e) {
-									throw new LexicalException("Integer out of range");
-								}
-								if(intVal<=Integer.MAX_VALUE || intVal>=Integer.MIN_VALUE)
-									token = new Token(Kind.INTLIT, sb.toString(), pos, line);
+		case '^':
+		    token = new Token(Kind.OP_POW, "^", pos, line);
 
-							}
-						}
-						return token;
+		    skippedChar = ' ';
+		    return token;
 
-					} else if (Character.isJavaIdentifierStart(ch)) {
-						pos++;
-						sb.append((char) ch);
-						while ((ch = r.read()) != -1 && Character.isJavaIdentifierPart(ch)) {
-							sb.append((char) ch);
-						}
-						if (keywordMap.containsKey(sb.toString())) {
-							Token.Kind value = keywordMap.get(sb.toString());
-							token = new Token(value, sb.toString(), pos, line);
-						} else {
-							token = new Token(Kind.NAME, sb.toString(), pos, line);
-						}
-						skippedChar = ch;
-						return token;
+		case '%':
+		    token = new Token(Kind.OP_MOD, "%", pos, line);
 
-					} else {
-						pos++;
-						if (ch == '\'' || ch == '"') {
-							ch = r.read();
-							sb.append((char) ch);
+		    skippedChar = ' ';
+		    return token;
 
-							while ((ch = r.read()) != -1 && (ch != '"' || ch != '\'')) {
-								if (ch != 34 && ch != 39)
-									sb.append((char) ch);
-								else {
-									skippedChar = ch;
-									token = new Token(Kind.STRINGLIT, sb.toString(), pos, line);
-									return token;
-								}
-							}
+		case '#':
+		    token = new Token(Kind.OP_HASH, "#", pos, line);
 
-						}
+		    skippedChar = ' ';
+		    return token;
 
-					}
-					throw new LexicalException("Invalid token");
+		case '&':
+		    token = new Token(Kind.BIT_AMP, "&", pos, line);
 
+		    skippedChar = ' ';
+		    return token;
+
+		case '|':
+		    token = new Token(Kind.BIT_OR, "|", pos, line);
+
+		    skippedChar = ' ';
+		    return token;
+
+		case '0':
+		    token = new Token(Kind.INTLIT, "0", pos, line);
+		    skippedChar = ' ';
+		    return token;
+
+		// checking for tokens that can have multiple characters
+		case '.':
+		    state = State.AFTER_DOT;
+
+		    skippedChar = ' ';
+		    break;
+
+		case ':':
+		    state = State.AFTER_COLON;
+
+		    skippedChar = ' ';
+		    break;
+
+		case '=':
+		    state = State.AFTER_EQ;
+
+		    skippedChar = ' ';
+		    break;
+
+		case '>':
+		    state = State.AFTER_GT;
+
+		    skippedChar = ' ';
+		    break;
+
+		case '<':
+		    state = State.AFTER_LT;
+
+		    skippedChar = ' ';
+		    break;
+
+		case '/':
+		    state = State.AFTER_DIV;
+
+		    skippedChar = ' ';
+		    break;
+
+		case '~':
+		    state = State.AFTER_NOT;
+
+		    skippedChar = ' ';
+		    break;
+
+		// if not any of the above handled characters
+		default:
+		    if (Character.isDigit(ch)) {
+			int currPos = pos;
+			sb.append((char) ch);
+			while (Character.isDigit(ch)) {
+			    ch = r.read();
+			    currPos++;
+			    if (Character.getNumericValue(ch) != -1 && Character.getNumericValue(ch) >= 0
+				    && Character.getNumericValue(ch) <= 9)
+				sb.append((char) ch);
+			    else {
+				skippedChar = ch;
+				String intStr = sb.toString();
+				int intVal = 0;
+				try {
+				    intVal = Integer.parseInt(intStr);
+				} catch (NumberFormatException e) {
+				    throw new LexicalException("Integer out of range");
 				}
-				break;
-			// Checking for tokens .. and ...
-			case AFTER_DOT:
-				pos++;
-				if (ch == '.') {
-					state = State.AFTER_DOTDOT;
-					break;
-				} else {
-					skippedChar = ch;
-					state = State.START;
-					return new Token(Kind.DOT, ".", pos, line);
-				}
+				if (intVal <= Integer.MAX_VALUE || intVal >= Integer.MIN_VALUE)
+				    token = new Token(Kind.INTLIT, sb.toString(), pos, line);
 
-			case AFTER_DOTDOT:
-				pos++;
-				if (ch == '.') {
-					return new Token(Kind.DOTDOTDOT, "...", pos, line);
-				} else {
-					skippedChar = ch;
-					state = State.START;
-					return new Token(Kind.DOTDOT, "..", pos, line);
-				}
+			    }
+			}
+			pos = currPos;
+			return token;
 
-			case AFTER_COLON:
-				pos++;
-				if (ch == ':') {
-					return new Token(Kind.COLONCOLON, "::", pos, line);
-				} else {
-					skippedChar = ch;
-					return new Token(Kind.COLON, ":", pos, line);
-				}
+		    } else if (Character.isJavaIdentifierStart(ch) && ch != '$' && ch != '_') {
+			int currPos = pos;
+			sb.append((char) ch);
+			while ((ch = r.read()) != -1 && Character.isJavaIdentifierPart(ch)) {
+			    currPos++;
+			    sb.append((char) ch);
+			}
+			if (keywordMap.containsKey(sb.toString())) {
+			    Token.Kind value = keywordMap.get(sb.toString());
+			    token = new Token(value, sb.toString(), pos, line);
+			} else {
+			    token = new Token(Kind.NAME, sb.toString(), currPos, line);
+			}
+			skippedChar = ch;
+			pos = currPos;
+			return token;
 
-			case AFTER_EQ:
-				pos++;
-				if (ch == '=') {
-					return new Token(Kind.REL_EQEQ, "==", pos, line);
-				} else {
-					skippedChar = ch;
-					return new Token(Kind.ASSIGN, "=", pos, line);
-				} // check this
+		    } else {
+			pos++;
+			if (ch == '\'' || ch == '"') {
+			    int start = ch;
+			    sb.append((char) ch);
 
-			case AFTER_GT:
+			    while ((ch = r.read()) != -1 && (ch != '"' || ch != '\'')) {
 				pos++;
-				if (ch == '=') {
-					return new Token(Kind.REL_GE, ">=", pos, line);
-				} else if (ch == '>') {
-					return new Token(Kind.BIT_SHIFTR, ">>", pos, line);
-				} else {
-					skippedChar = ch;
-					return new Token(Kind.REL_GT, ">", pos, line);
+				if (ch != 34 && ch != 39)
+				    sb.append((char) ch);
+				else {
+				    skippedChar = ch;
 				}
+			    }
+			    sb.append((char) start);
+			    token = new Token(Kind.STRINGLIT, sb.toString(), pos, line);
+			    return token;
 
-			case AFTER_LT:
-				pos++;
-				if (ch == '=') {
-					return new Token(Kind.REL_LE, "<=", pos, line);
-				} else if (ch == '<') {
-					return new Token(Kind.BIT_SHIFTL, "<<", pos, line);
-				} else {
-					skippedChar = ch;
-					return new Token(Kind.REL_LT, "<", pos, line);
-				}
-
-			case AFTER_DIV:
-				pos++;
-				if (ch == '/') {
-					return new Token(Kind.OP_DIVDIV, "//", pos, line);
-				} else {
-					skippedChar = ch;
-					return new Token(Kind.OP_DIV, "/", pos, line);
-				}
-
-			case AFTER_NOT:
-				pos++;
-				if (ch == '=') {
-					return new Token(Kind.REL_NOTEQ, "~=", pos, line);
-				} else {
-					skippedChar = ch;
-					return new Token(Kind.BIT_XOR, "~", pos, line);
-				}
 			}
 
+		    }
+		    throw new LexicalException("Invalid token");
+
 		}
-		return new Token(EOF, "eof", pos, line);
-	}
+		break;
+	    // Checking for tokens .. and ...
+	    case AFTER_DOT:
 
-	private void initKeywordMap() {
-		keywordMap.put("and", Kind.KW_and);
-		keywordMap.put("break", Kind.KW_break);
-		keywordMap.put("do", Kind.KW_do);
-		keywordMap.put("else", Kind.KW_else);
-		keywordMap.put("elseif", Kind.KW_elseif);
-		keywordMap.put("end", Kind.KW_end);
-		keywordMap.put("false", Kind.KW_false);
-		keywordMap.put("for", Kind.KW_for);
-		keywordMap.put("function", Kind.KW_function);
-		keywordMap.put("goto", Kind.KW_goto);
-		keywordMap.put("if", Kind.KW_if);
-		keywordMap.put("in", Kind.KW_in);
-		keywordMap.put("local", Kind.KW_local);
-		keywordMap.put("nil", Kind.KW_nil);
-		keywordMap.put("not", Kind.KW_not);
-		keywordMap.put("or", Kind.KW_or);
-		keywordMap.put("repeat", Kind.KW_repeat);
-		keywordMap.put("return", Kind.KW_return);
-		keywordMap.put("then", Kind.KW_then);
-		keywordMap.put("true", Kind.KW_true);
-		keywordMap.put("until", Kind.KW_until);
-		keywordMap.put("while", Kind.KW_while);
+		if (ch == '.') {
+		    state = State.AFTER_DOTDOT;
+		    break;
+		} else {
+		    skippedChar = ch;
+		    state = State.START;
+		    return new Token(Kind.DOT, ".", pos, line);
+		}
+
+	    case AFTER_DOTDOT:
+
+		if (ch == '.') {
+		    return new Token(Kind.DOTDOTDOT, "...", pos, line);
+		} else {
+		    skippedChar = ch;
+		    state = State.START;
+		    return new Token(Kind.DOTDOT, "..", pos, line);
+		}
+
+	    case AFTER_COLON:
+
+		if (ch == ':') {
+		    return new Token(Kind.COLONCOLON, "::", pos, line);
+		} else {
+		    skippedChar = ch;
+		    return new Token(Kind.COLON, ":", pos, line);
+		}
+
+	    case AFTER_EQ:
+
+		if (ch == '=') {
+		    return new Token(Kind.REL_EQEQ, "==", pos, line);
+		} else {
+		    skippedChar = ch;
+		    return new Token(Kind.ASSIGN, "=", pos, line);
+		}
+
+	    case AFTER_GT:
+
+		if (ch == '=') {
+		    return new Token(Kind.REL_GE, ">=", pos, line);
+		} else if (ch == '>') {
+		    return new Token(Kind.BIT_SHIFTR, ">>", pos, line);
+		} else {
+		    skippedChar = ch;
+		    return new Token(Kind.REL_GT, ">", pos, line);
+		}
+
+	    case AFTER_LT:
+
+		if (ch == '=') {
+		    return new Token(Kind.REL_LE, "<=", pos, line);
+		} else if (ch == '<') {
+		    return new Token(Kind.BIT_SHIFTL, "<<", pos, line);
+		} else {
+		    skippedChar = ch;
+		    return new Token(Kind.REL_LT, "<", pos, line);
+		}
+
+	    case AFTER_DIV:
+
+		if (ch == '/') {
+		    return new Token(Kind.OP_DIVDIV, "//", pos, line);
+		} else {
+		    skippedChar = ch;
+		    return new Token(Kind.OP_DIV, "/", pos, line);
+		}
+
+	    case AFTER_NOT:
+
+		if (ch == '=') {
+		    return new Token(Kind.REL_NOTEQ, "~=", pos, line);
+		} else {
+		    skippedChar = ch;
+		    return new Token(Kind.BIT_XOR, "~", pos, line);
+		}
+
+	    case AFTER_CR:
+
+		ch = r.read();
+		if (ch == '\n') {
+		    state = State.START;
+		    break;
+		}
+
+	    case AFTER_BACKSLASH:
+		ch = r.read();
+		if (ch == 'a' || ch == 'b' || ch == 'f' || ch == 'n' || ch == 'r' || ch == 't' || ch == 'v'
+			|| ch == '\'') {
+
+		}
+		break;
+
+	    case AFTER_HYPHEN:
+		if (ch == '-') {
+		    while (ch != '\n' || ch != '\r') {
+			ch = r.read();
+		    }
+		} else {
+		    skippedChar = ch;
+		    return new Token(Kind.OP_MINUS, "-", pos, line);
+		}
+		break;
+	    }
 
 	}
+	return new Token(EOF, "eof", pos, line);
+    }
+
+    private void initKeywordMap() {
+	keywordMap.put("and", Kind.KW_and);
+	keywordMap.put("break", Kind.KW_break);
+	keywordMap.put("do", Kind.KW_do);
+	keywordMap.put("else", Kind.KW_else);
+	keywordMap.put("elseif", Kind.KW_elseif);
+	keywordMap.put("end", Kind.KW_end);
+	keywordMap.put("false", Kind.KW_false);
+	keywordMap.put("for", Kind.KW_for);
+	keywordMap.put("function", Kind.KW_function);
+	keywordMap.put("goto", Kind.KW_goto);
+	keywordMap.put("if", Kind.KW_if);
+	keywordMap.put("in", Kind.KW_in);
+	keywordMap.put("local", Kind.KW_local);
+	keywordMap.put("nil", Kind.KW_nil);
+	keywordMap.put("not", Kind.KW_not);
+	keywordMap.put("or", Kind.KW_or);
+	keywordMap.put("repeat", Kind.KW_repeat);
+	keywordMap.put("return", Kind.KW_return);
+	keywordMap.put("then", Kind.KW_then);
+	keywordMap.put("true", Kind.KW_true);
+	keywordMap.put("until", Kind.KW_until);
+	keywordMap.put("while", Kind.KW_while);
+
+    }
 
 }
