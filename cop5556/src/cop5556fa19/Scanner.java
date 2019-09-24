@@ -287,6 +287,7 @@ public class Scanner {
 			}
 			skippedChar = ch;
 			pos = currPos;
+			
 			return token;
 
 		    } else {
@@ -295,16 +296,50 @@ public class Scanner {
 			    int start = ch;
 			    sb.append((char) ch);
 
-			    while ((ch = r.read()) != -1 && (ch != '"' || ch != '\'')) {
+			    while ((ch = r.read()) != -1 && (ch != '"' && ch != '\'')) {
 				pos++;
-				if (ch != 34 && ch != 39)
+				if (ch != 34 && ch != 39 && ch != 92) {
 				    sb.append((char) ch);
-				else {
+				}
+				// sb.append((char) ch);
+				else if (ch == '\\') {
+				    // checking for escape sequences in string literal
+				    ch = r.read();
+				    if (ch == 'a') {
+					sb.append((char) 7);
+				    } else if (ch == 'b') {
+					sb.append((char) 8);
+				    } else if (ch == 'f') {
+					sb.append((char) 12);
+				    } else if (ch == 'v') {
+					sb.append((char) 11);
+				    } else if (ch == 'n') {
+					sb.append((char) 10);
+				    } else if (ch == 't') {
+					sb.append((char) 9);
+				    } else if (ch == 'r') {
+					sb.append((char) 13);
+				    } else if (ch == '\\') {
+					sb.append((char) ch);
+				    } else if (ch == '\'') {
+					sb.append((char) ch);
+				    } else if (ch == '\"') {
+					sb.append((char) ch);
+				    } else {
+					skippedChar = ch;
+					throw new LexicalException("Invalid token \\ not allowed in string literal");
+
+				    }
+				} else {
 				    skippedChar = ch;
 				}
 			    }
-			    sb.append((char) start);
+			    if (!(ch == -1) && ch == start)
+				sb.append((char) ch);
+			    else
+				throw new LexicalException("No closing quotes in string literal");
 			    token = new Token(Kind.STRINGLIT, sb.toString(), pos, line);
+			 
 			    return token;
 
 			}
@@ -418,8 +453,25 @@ public class Scanner {
 
 	    case AFTER_HYPHEN:
 		if (ch == '-') {
-		    while (ch != '\n' || ch != '\r') {
+		    while (ch != -1 && ch != 10 && ch != 13) {
 			ch = r.read();
+
+		    }
+		    if (ch == '\n') {
+			ch = r.read();
+			if (ch == '\r') {
+			    state = State.START;
+			    break;
+			} else {
+			    skippedChar = ch;
+			    state = State.START;
+			    break;
+			}
+		    } else if (ch == '\r') {
+			state = State.START;
+			break;
+		    } else if (ch == -1) {
+			throw new LexicalException("No comment terminator found");
 		    }
 		} else {
 		    skippedChar = ch;
@@ -456,6 +508,11 @@ public class Scanner {
 	keywordMap.put("until", Kind.KW_until);
 	keywordMap.put("while", Kind.KW_while);
 
+    }
+
+    private boolean containsEscapeSequence() {
+
+	return false;
     }
 
 }
