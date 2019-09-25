@@ -246,12 +246,26 @@ public class ExpressionParser {
 	Token first = t;
 	Exp e0 = null;
 	Exp e1 = null;
-	e0 = prec10();
+	e0 = precPow();
 	while (unaryOp.contains(t.kind)) {
 	    Token op = t;
 	    consume();
-	    e1 = prec10();
+	    e1 = precPow();
 	    e0 = new ExpUnary(first, op.kind, e1);
+	}
+	return e0;
+    }
+    
+    private Exp precPow() throws Exception{
+	Token first = t;
+	Exp e0 = null;
+	Exp e1 = null;
+	e0 = prec10();
+	while (t.kind==powOp) {
+	    Token op = t;
+	    consume();
+	    e1 = prec10();
+	    e0 = binaryExp(first, e0, op, e1); 
 	}
 	return e0;
     }
