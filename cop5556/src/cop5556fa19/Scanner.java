@@ -65,7 +65,11 @@ public class Scanner {
 	    pos++;
 	    if (skippedChar == ' ') {
 		ch = r.read();
+	    } else {
+		ch = skippedChar;
+		skippedChar = ' ';
 	    }
+
 	    switch (state) {
 
 	    case START:
@@ -287,7 +291,7 @@ public class Scanner {
 			}
 			skippedChar = ch;
 			pos = currPos;
-			
+
 			return token;
 
 		    } else {
@@ -334,12 +338,13 @@ public class Scanner {
 				    skippedChar = ch;
 				}
 			    }
-			    if (!(ch == -1) && ch == start)
+			    if (!(ch == -1) && ch == start) {
 				sb.append((char) ch);
-			    else
+			    } else {
 				throw new LexicalException("No closing quotes in string literal");
+			    }
 			    token = new Token(Kind.STRINGLIT, sb.toString(), pos, line);
-			 
+
 			    return token;
 
 			}
