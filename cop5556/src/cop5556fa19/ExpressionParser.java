@@ -63,8 +63,9 @@ public class ExpressionParser {
     Kind prec7Op = DOTDOT;
     List<Token.Kind> prec8Op = new ArrayList<>();
     List<Token.Kind> prec9Op = new ArrayList<>();
-    List<Token.Kind> prec10Op = new ArrayList<>();
-    Kind prec11Op = OP_POW;
+    List<Token.Kind> unaryOp = new ArrayList<>();
+    Kind powOp = OP_POW;
+    
 
     ExpressionParser(Scanner s) throws Exception {
 	this.scanner = s;
@@ -92,10 +93,10 @@ public class ExpressionParser {
 	prec9Op.add(OP_DIVDIV);
 	prec9Op.add(OP_MOD); // *,/,//,% with same precedence
 
-	prec10Op.add(KW_not);
-	prec10Op.add(OP_HASH);
-	prec10Op.add(OP_MINUS);
-	prec10Op.add(BIT_XOR); // unary operators
+	unaryOp.add(KW_not);
+	unaryOp.add(OP_HASH);
+	unaryOp.add(OP_MINUS);
+	unaryOp.add(BIT_XOR); // unary operators
     }
 
     Exp exp() throws Exception {
@@ -231,12 +232,26 @@ public class ExpressionParser {
 	Token first = t;
 	Exp e0 = null;
 	Exp e1 = null;
-	e0 = prec10();
+	e0 = precUnary();
 	while (prec9Op.contains(t.kind)) {
 	    Token op = t;
 	    consume();
-	    e1 = prec10();
+	    e1 = precUnary();
 	    e0 = binaryExp(first, e0, op, e1);
+	}
+	return e0;
+    }
+    
+    private Exp precUnary() throws Exception{
+	Token first = t;
+	Exp e0 = null;
+	Exp e1 = null;
+	e0 = prec10();
+	while (unaryOp.contains(t.kind)) {
+	    Token op = t;
+	    consume();
+	    e1 = prec10();
+	    e0 = new ExpUnary(first, op.kind, e1);
 	}
 	return e0;
     }
@@ -276,8 +291,7 @@ public class ExpressionParser {
 	    break;
 
 	case KW_function:
-	    // e0 = new ExpFunction(t, body);
-	    consume();
+	    e0 = functionBody();
 	    break;
 
 	case NAME:
@@ -293,6 +307,55 @@ public class ExpressionParser {
 
 	}
 	return e0;
+    }
+
+    private Exp prefixExp() {
+	// TODO Auto-generated method stub
+	return null;
+    }
+
+    private Exp functionBody() throws Exception {
+	Exp e0 = null;
+	Exp e1 = null;
+	Token op = consume();
+	if (op.kind == Kind.LPAREN) {
+	    consume();
+	    parList();
+	    match(RPAREN);
+	} else {
+	    throw new SyntaxException(op, "invalid expression");
+	}
+	return e1;
+
+    }
+
+    private Exp parList() throws Exception {
+	Token t = consume();
+	if (t.kind == Kind.DOTDOTDOT) {
+	    //return new ParList(t, nameList, hasVarArgs);
+	}
+	nameList();
+	return null;
+
+    }
+
+    private void nameList() {
+
+    }
+
+    private Exp tableConstructor() {
+	// TODO Auto-generated method stub
+	return null;
+    }
+
+    private Exp fieldList() {
+	// TODO Auto-generated method stub
+	return null;
+    }
+
+    private Exp field() {
+	// TODO Auto-generated method stub
+	return null;
     }
 
     private ExpName expName(String name) {
