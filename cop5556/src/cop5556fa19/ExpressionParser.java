@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import cop5556fa19.AST.ASTVisitor;
 import cop5556fa19.AST.Block;
 import cop5556fa19.AST.Exp;
 import cop5556fa19.AST.ExpBinary;
@@ -306,6 +307,7 @@ public class ExpressionParser {
 	case KW_function:
 	    FuncBody fnBody = functionBody();
 	    e0 = new ExpFunction(t, fnBody);
+	    match(KW_end);
 	    consume();
 	    break;
 
@@ -320,8 +322,68 @@ public class ExpressionParser {
 	    match(RPAREN);
 	    break;
 
+	case LCURLY:
+	    List<Field> fieldList = fieldList();
+	    e0 = new ExpTable(t, fieldList);
+	    match(Kind.RCURLY);
+	    consume();
+	    break;
+
+	default:
+	    throw new SyntaxException(t, "invalid token");
+
 	}
 	return e0;
+    }
+
+    private List<Field> fieldList() throws Exception {
+	List<Field> fieldList = new ArrayList<>();
+	Field f;
+	Token first = t;
+	consume();
+	if (isKind(Kind.LSQUARE)) {
+	    consume();
+	    Exp key = exp();
+
+	    match(Kind.RSQUARE);
+	    match(ASSIGN);
+	    Exp value = exp();
+	    f = new FieldExpKey(first, key, value);
+	} else if (isKind(NAME)) {
+	    Name name = new Name(t, t.text);
+	    consume();
+	    match(ASSIGN);
+	    Exp exp = exp();
+	    f = new FieldNameKey(first, name, exp);
+	} else {
+	    f = new FieldImplicitKey(first, exp());
+	}
+	fieldList.add(f);
+	while (isKind(COMMA, SEMI)) {
+	    consume();
+	    if (isKind(Kind.LSQUARE)) {
+
+		Exp key = exp();
+		match(Kind.RSQUARE);
+		match(ASSIGN);
+		Exp value = exp();
+		fieldList.add(new FieldExpKey(first, key, value));
+	    } else if (isKind(NAME)) {
+		Name name = new Name(t, t.text);
+		consume();
+		match(ASSIGN);
+		Exp exp = exp();
+		fieldList.add(new FieldNameKey(first, name, exp));
+	    } else {
+		fieldList.add(new FieldImplicitKey(first, exp()));
+	    }
+	}
+	return fieldList;
+    }
+
+    private Field field() {
+	// TODO Auto-generated method stub
+	return null;
     }
 
     private FuncBody functionBody() throws Exception {
@@ -337,18 +399,16 @@ public class ExpressionParser {
     }
 
     private ParList parList() throws Exception {
-	// Token t = consume();
 	ParList pList = null;
 	List<Name> nList = null;
 	boolean hasVarArgs = true;
 	if (t.kind == Kind.DOTDOTDOT) {
 	    pList = new ParList(t, nList, hasVarArgs);
 	    consume();
-	}else if(t.kind == Kind.RPAREN) {
+	} else if (t.kind == Kind.RPAREN) {
 	    hasVarArgs = false;
 	    pList = new ParList(t, nList, hasVarArgs);
-	}
-	else {
+	} else {
 	    hasVarArgs = false;
 	    nList = nameList();
 	    pList = new ParList(t, nList, hasVarArgs);
@@ -372,31 +432,6 @@ public class ExpressionParser {
 	return nameList;
     }
 
-    private Exp tableConstructor() {
-	// TODO Auto-generated method stub
-	return null;
-    }
-
-    private Exp fieldList() {
-	// TODO Auto-generated method stub
-	return null;
-    }
-
-    private Exp field() {
-	// TODO Auto-generated method stub
-	return null;
-    }
-
-    private ExpName expName(String name) {
-	ExpName e = new ExpName(name);
-	return e;
-    }
-
-    private ExpInt expInt(Token first) {
-	// TODO Auto-generated method stub
-	return new ExpInt(first);
-    }
-
     private Exp andExp() throws Exception {
 	// TODO Auto-generated method stub
 	throw new UnsupportedOperationException("andExp"); // I find this is a more useful placeholder than returning
@@ -406,46 +441,6 @@ public class ExpressionParser {
     private ExpBinary binaryExp(Token firstToken, Exp e0, Token op, Exp e1) {
 	ExpBinary exp = new ExpBinary(firstToken, e0, op, e1);
 	return exp;
-    }
-
-    private ExpUnary unaryExp() throws Exception {
-	throw new UnsupportedOperationException("unaryExp");
-    }
-
-    private ExpFalse falseExp(Token token) {
-	return new ExpFalse(token);
-    }
-
-    private ExpTrue trueExp(Token firstToken) throws Exception {
-	return new ExpTrue(firstToken);
-    }
-
-    private ExpNil nilExp() throws Exception {
-	return new ExpNil(t);
-
-    }
-
-    private ExpInt intExp(Token token) throws Exception {
-	ExpInt e = new ExpInt(token);
-	return e;
-    }
-
-    private ExpString stringExp(Token token) throws Exception {
-	ExpString e = new ExpString(token);
-	return e;
-    }
-
-    private ExpFunction functionDefExp(Token token, FuncBody fnBody) throws Exception {
-	ExpFunction e = new ExpFunction(token, fnBody);
-	return e;
-    }
-
-    private ExpName nameExp() throws Exception {
-	throw new UnsupportedOperationException("nameExp");
-    }
-
-    private ExpTable tableconstructorExp() throws Exception {
-	throw new UnsupportedOperationException("tableconstructorExp");
     }
 
     private Block block() {
