@@ -95,7 +95,6 @@ public class ExpressionParser {
 
 	unaryOp.add(KW_not);
 	unaryOp.add(OP_HASH);
-	unaryOp.add(OP_MINUS);
 	unaryOp.add(BIT_XOR); // unary operators
     }
 
@@ -257,17 +256,26 @@ public class ExpressionParser {
     }
 
     private Exp precPow() throws Exception {
+	List<Exp> powerExps = new ArrayList<>();
 	Token first = t;
-	Exp e0 = null;
-	Exp e1 = null;
-	e0 = prec10();
+	powerExps.add(prec10());
 	while (t.kind == powOp) {
-	    Token op = t;
 	    consume();
-	    e1 = prec10();
-	    e0 = binaryExp(first, e0, op, e1);
+	    powerExps.add(prec10());
 	}
-	return e0;
+	Exp expLast = null;
+	int index = 0;
+	if (powerExps != null && powerExps.size() != 0) {
+	    expLast = powerExps.get(powerExps.size() - 1);
+	    index = powerExps.size() - 2;
+	}
+	while (index >= 0 && expLast != null) {
+	    Exp expLS = powerExps.get(index);
+
+	    expLast = new ExpBinary(first, expLS, Kind.OP_POW, expLast);
+	    index--;
+	}
+	return expLast;
     }
 
     private Exp prec10() throws Exception {
@@ -327,6 +335,30 @@ public class ExpressionParser {
 	    e0 = new ExpTable(t, fieldList);
 	    match(Kind.RCURLY);
 	    consume();
+	    break;
+	    
+	case OP_MINUS:
+	    consume();
+	    Exp e1 = exp();
+	    e0 = new ExpUnary(t, Kind.OP_MINUS, e1);
+	    break;
+
+	case KW_not:
+	    consume();
+	    e1 = exp();
+	    e0 = new ExpUnary(t, KW_not, e1);
+	    break;
+
+	case OP_HASH:
+	    consume();
+	    e1 = exp();
+	    e0 = new ExpUnary(t, Kind.OP_HASH, e1);
+	    break;
+
+	case BIT_XOR:
+	    consume();
+	    e1 = exp();
+	    e0 = new ExpUnary(t, Kind.BIT_XOR, e1);
 	    break;
 
 	default:

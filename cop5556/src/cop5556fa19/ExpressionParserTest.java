@@ -109,7 +109,7 @@ class ExpressionParserTest {
 
 	@Test
 	void testBinary0() throws Exception {
-		String input = "2 + 3 + 4";
+		String input = "1 + 2";
 		Exp e = parseAndShow(input);
 		Exp expected = Expressions.makeBinary(1,OP_PLUS,2);
 		show(expected);
@@ -118,7 +118,7 @@ class ExpressionParserTest {
 	
 	@Test
 	void testUnary0() throws Exception {
-		String input = "-2";
+		String input = "2-3";
 		Exp e = parseAndShow(input);
 		Exp expected = Expressions.makeExpUnary(OP_MINUS, 2);
 		show("expected="+expected);
@@ -174,7 +174,7 @@ class ExpressionParserTest {
 	
 	@Test
 	void testFunction() throws Exception{
-	    String input = "function(a,b,c)";
+	    String input = "function(a,b,c) end";
 	    Exp e = parseAndShow(input);
 	    
 	}
@@ -193,8 +193,8 @@ class ExpressionParserTest {
 	}
 	
 	@Test
-	void testValidFieldList1() throws Exception{
-	    String input = "{,}";
+	void testBinaryExp1() throws Exception{
+	    String input = "-2-1";
 	    Exp e = parseAndShow(input);
 	}
 
