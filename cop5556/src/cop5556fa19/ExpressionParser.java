@@ -256,26 +256,26 @@ public class ExpressionParser {
     }
 
     private Exp precPow() throws Exception {
-	List<Exp> powerExps = new ArrayList<>();
+	List<Exp> powerExpList = new ArrayList<>();
 	Token first = t;
-	powerExps.add(prec10());
+	powerExpList.add(prec10());
 	while (t.kind == powOp) {
 	    consume();
-	    powerExps.add(prec10());
+	    powerExpList.add(prec10());
 	}
-	Exp expLast = null;
+	Exp e0 = null;
 	int index = 0;
-	if (powerExps != null && powerExps.size() != 0) {
-	    expLast = powerExps.get(powerExps.size() - 1);
-	    index = powerExps.size() - 2;
+	if (powerExpList != null && powerExpList.size() != 0) {
+	    e0 = powerExpList.get(powerExpList.size() - 1);
+	    index = powerExpList.size() - 2;
 	}
-	while (index >= 0 && expLast != null) {
-	    Exp expLS = powerExps.get(index);
+	while (index >= 0 && e0 != null) {
+	    Exp expLS = powerExpList.get(index);
 
-	    expLast = new ExpBinary(first, expLS, Kind.OP_POW, expLast);
+	    e0 = new ExpBinary(first, expLS, Kind.OP_POW, e0);
 	    index--;
 	}
-	return expLast;
+	return e0;
     }
 
     private Exp prec10() throws Exception {
@@ -336,7 +336,7 @@ public class ExpressionParser {
 	    match(Kind.RCURLY);
 	    consume();
 	    break;
-	    
+
 	case OP_MINUS:
 	    consume();
 	    Exp e1 = exp();
