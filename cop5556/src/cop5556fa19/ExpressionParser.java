@@ -65,7 +65,6 @@ public class ExpressionParser {
     List<Token.Kind> prec9Op = new ArrayList<>();
     List<Token.Kind> unaryOp = new ArrayList<>();
     Kind powOp = OP_POW;
-    
 
     ExpressionParser(Scanner s) throws Exception {
 	this.scanner = s;
@@ -241,8 +240,8 @@ public class ExpressionParser {
 	}
 	return e0;
     }
-    
-    private Exp precUnary() throws Exception{
+
+    private Exp precUnary() throws Exception {
 	Token first = t;
 	Exp e0 = null;
 	Exp e1 = null;
@@ -255,17 +254,17 @@ public class ExpressionParser {
 	}
 	return e0;
     }
-    
-    private Exp precPow() throws Exception{
+
+    private Exp precPow() throws Exception {
 	Token first = t;
 	Exp e0 = null;
 	Exp e1 = null;
 	e0 = prec10();
-	while (t.kind==powOp) {
+	while (t.kind == powOp) {
 	    Token op = t;
 	    consume();
 	    e1 = prec10();
-	    e0 = binaryExp(first, e0, op, e1); 
+	    e0 = binaryExp(first, e0, op, e1);
 	}
 	return e0;
     }
@@ -305,7 +304,9 @@ public class ExpressionParser {
 	    break;
 
 	case KW_function:
-	    e0 = functionBody();
+	    FuncBody fnBody = functionBody();
+	    e0 = new ExpFunction(t, fnBody);
+	    consume();
 	    break;
 
 	case NAME:
@@ -323,38 +324,52 @@ public class ExpressionParser {
 	return e0;
     }
 
-    private Exp prefixExp() {
-	// TODO Auto-generated method stub
-	return null;
+    private FuncBody functionBody() throws Exception {
+	Token first = t;
+	FuncBody fnBody = null;
+	ParList pList = null;
+	consume();
+	match(LPAREN);
+	pList = parList();
+	match(RPAREN);
+	fnBody = new FuncBody(first, pList, null);
+	return fnBody;
     }
 
-    private Exp functionBody() throws Exception {
-	Exp e0 = null;
-	Exp e1 = null;
-	Token op = consume();
-	if (op.kind == Kind.LPAREN) {
-	    consume();
-	    parList();
-	    match(RPAREN);
-	} else {
-	    throw new SyntaxException(op, "invalid expression");
-	}
-	return e1;
-
-    }
-
-    private Exp parList() throws Exception {
-	Token t = consume();
+    private ParList parList() throws Exception {
+	// Token t = consume();
+	ParList pList = null;
+	List<Name> nList = null;
+	boolean hasVarArgs = true;
 	if (t.kind == Kind.DOTDOTDOT) {
-	    //return new ParList(t, nameList, hasVarArgs);
+	    pList = new ParList(t, nList, hasVarArgs);
+	    consume();
+	}else if(t.kind == Kind.RPAREN) {
+	    hasVarArgs = false;
+	    pList = new ParList(t, nList, hasVarArgs);
 	}
-	nameList();
-	return null;
+	else {
+	    hasVarArgs = false;
+	    nList = nameList();
+	    pList = new ParList(t, nList, hasVarArgs);
+	}
+	return pList;
 
     }
 
-    private void nameList() {
+    private List<Name> nameList() throws Exception {
+	List<Name> nameList = new ArrayList<>();
+	nameList.add(new Name(t, t.text));
+	consume();
+	while (isKind(COMMA)) {
+	    consume();
+	    if (t.kind == NAME) {
+		nameList.add(new Name(t, t.getName()));
+		consume();
+	    }
+	}
 
+	return nameList;
     }
 
     private Exp tableConstructor() {
