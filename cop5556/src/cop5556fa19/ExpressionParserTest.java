@@ -118,7 +118,7 @@ class ExpressionParserTest {
 	
 	@Test
 	void testUnary0() throws Exception {
-		String input = "2-3";
+		String input = "-2";
 		Exp e = parseAndShow(input);
 		Exp expected = Expressions.makeExpUnary(OP_MINUS, 2);
 		show("expected="+expected);
@@ -195,6 +195,12 @@ class ExpressionParserTest {
 	@Test
 	void testBinaryExp1() throws Exception{
 	    String input = "-2-1";
+	    Exp e = parseAndShow(input);
+	}
+	
+	@Test
+	void testPrefixExp() throws Exception{
+	    String input = "{}";
 	    Exp e = parseAndShow(input);
 	}
 

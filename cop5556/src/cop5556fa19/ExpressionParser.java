@@ -204,11 +204,26 @@ public class ExpressionParser {
 	Exp e0 = null;
 	Exp e1 = null;
 	e0 = prec8();
+	List<Exp> concatExpList = new ArrayList<>();
+	concatExpList.add(e0);
 	while (t.kind == prec7Op) {
 	    Token op = t;
 	    consume();
 	    e1 = prec8();
-	    e0 = binaryExp(first, e0, op, e1);
+	    concatExpList.add(e1);
+	    int index = 0;
+	    // reading from right to left
+	    if (concatExpList != null && concatExpList.size() != 0) {
+		e0 = concatExpList.get(concatExpList.size() - 1);
+		index = concatExpList.size() - 2;
+	    }
+	    while (index >= 0 && e0 != null) {
+		Exp exp1 = concatExpList.get(index);
+
+		e0 = new ExpBinary(first, exp1, Kind.DOTDOT, e0);
+		index--;
+	    }
+
 	}
 	return e0;
     }
@@ -256,8 +271,8 @@ public class ExpressionParser {
     }
 
     private Exp precPow() throws Exception {
-	List<Exp> powerExpList = new ArrayList<>();
 	Token first = t;
+	List<Exp> powerExpList = new ArrayList<>();
 	powerExpList.add(prec10());
 	while (t.kind == powOp) {
 	    consume();
@@ -279,48 +294,49 @@ public class ExpressionParser {
     }
 
     private Exp prec10() throws Exception {
+	Token first = t;
 	Kind kind = t.kind;
 	Exp e0 = null;
 	switch (kind) {
 	case INTLIT:
-	    e0 = new ExpInt(t);
+	    e0 = new ExpInt(first);
 	    consume();
 	    break;
 
 	case STRINGLIT:
-	    e0 = new ExpString(t);
+	    e0 = new ExpString(first);
 	    consume();
 	    break;
 
 	case KW_false:
-	    e0 = new ExpFalse(t);
+	    e0 = new ExpFalse(first);
 	    consume();
 	    break;
 
 	case KW_true:
-	    e0 = new ExpTrue(t);
+	    e0 = new ExpTrue(first);
 	    consume();
 	    break;
 
 	case KW_nil:
-	    e0 = new ExpNil(t);
+	    e0 = new ExpNil(first);
 	    consume();
 	    break;
 
 	case DOTDOTDOT:
-	    e0 = new ExpVarArgs(t);
+	    e0 = new ExpVarArgs(first);
 	    consume();
 	    break;
 
 	case KW_function:
 	    FuncBody fnBody = functionBody();
-	    e0 = new ExpFunction(t, fnBody);
+	    e0 = new ExpFunction(first, fnBody);
 	    match(KW_end);
 	    consume();
 	    break;
 
 	case NAME:
-	    e0 = new ExpName(t.text);
+	    e0 = new ExpName(first.text);
 	    consume();
 	    break;
 
@@ -331,38 +347,38 @@ public class ExpressionParser {
 	    break;
 
 	case LCURLY:
-	    List<Field> fieldList = fieldList();
-	    e0 = new ExpTable(t, fieldList);
-	    match(Kind.RCURLY);
 	    consume();
+	    List<Field> fieldList = fieldList();
+	    e0 = new ExpTable(first, fieldList);
+	    match(Kind.RCURLY);
 	    break;
 
 	case OP_MINUS:
 	    consume();
 	    Exp e1 = exp();
-	    e0 = new ExpUnary(t, Kind.OP_MINUS, e1);
+	    e0 = new ExpUnary(first, Kind.OP_MINUS, e1);
 	    break;
 
 	case KW_not:
 	    consume();
 	    e1 = exp();
-	    e0 = new ExpUnary(t, KW_not, e1);
+	    e0 = new ExpUnary(first, KW_not, e1);
 	    break;
 
 	case OP_HASH:
 	    consume();
 	    e1 = exp();
-	    e0 = new ExpUnary(t, Kind.OP_HASH, e1);
+	    e0 = new ExpUnary(first, Kind.OP_HASH, e1);
 	    break;
 
 	case BIT_XOR:
 	    consume();
 	    e1 = exp();
-	    e0 = new ExpUnary(t, Kind.BIT_XOR, e1);
+	    e0 = new ExpUnary(first, Kind.BIT_XOR, e1);
 	    break;
 
 	default:
-	    throw new SyntaxException(t, "invalid token");
+	    throw new SyntaxException(first, "invalid token");
 
 	}
 	return e0;
@@ -370,11 +386,13 @@ public class ExpressionParser {
 
     private List<Field> fieldList() throws Exception {
 	List<Field> fieldList = new ArrayList<>();
+	if (isKind(RCURLY)) {
+	    return fieldList;
+	}
 	Field f = field();
-	Token first = t;
 	fieldList.add(f);
-
 	while (isKind(COMMA, SEMI)) {
+	    consume();
 	    fieldList.add(field());
 	}
 	return fieldList;
@@ -383,7 +401,6 @@ public class ExpressionParser {
     private Field field() throws Exception {
 	Token first = t;
 	Field f;
-	consume();
 	if (isKind(Kind.LSQUARE)) {
 	    consume();
 	    Exp key = exp();
@@ -420,6 +437,7 @@ public class ExpressionParser {
     }
 
     private ParList parList() throws Exception {
+	Token first = t;
 	ParList pList = null;
 	List<Name> nList = null;
 	boolean hasVarArgs = true;
