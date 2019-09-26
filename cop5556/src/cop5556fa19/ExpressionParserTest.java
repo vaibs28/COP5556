@@ -109,7 +109,7 @@ class ExpressionParserTest {
 
 	@Test
 	void testBinary0() throws Exception {
-		String input = "2+(3*4)";
+		String input = "2 + 3 + 4";
 		Exp e = parseAndShow(input);
 		Exp expected = Expressions.makeBinary(1,OP_PLUS,2);
 		show(expected);
@@ -160,6 +160,42 @@ class ExpressionParserTest {
 		show("expected=" + expected);
 		assertEquals(expected,e);
 		
+	}
+	
+	@Test
+	void testPowPrec() throws Exception {
+		String input = "2^3^4";
+		Exp e = parseAndShow(input);
+		//Exp expected = Expressions.makeBinary(Expressions.makeBinary(3,OP_POW,4) , OP_PLUS ,  Expressions.);
+		//show("expected=" + expected);
+		//assertEquals(expected,e);
+	
+	}
+	
+	@Test
+	void testFunction() throws Exception{
+	    String input = "function(a,b,c)";
+	    Exp e = parseAndShow(input);
+	    
+	}
+	
+	@Test
+	void testInvalidFunction() throws Exception{
+	    String input = "function(...) end";
+	    Exp e = parseAndShow(input);
+	    
+	}
+	
+	@Test
+	void testValidFieldList() throws Exception{
+	    String input = "{a,b,c}";
+	    Exp e = parseAndShow(input);
+	}
+	
+	@Test
+	void testValidFieldList1() throws Exception{
+	    String input = "{,}";
+	    Exp e = parseAndShow(input);
 	}
 
 }

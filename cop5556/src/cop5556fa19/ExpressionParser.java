@@ -338,52 +338,41 @@ public class ExpressionParser {
 
     private List<Field> fieldList() throws Exception {
 	List<Field> fieldList = new ArrayList<>();
-	Field f;
+	Field f = field();
 	Token first = t;
+	fieldList.add(f);
+
+	while (isKind(COMMA, SEMI)) {
+	    fieldList.add(field());
+	}
+	return fieldList;
+    }
+
+    private Field field() throws Exception {
+	Token first = t;
+	Field f;
 	consume();
 	if (isKind(Kind.LSQUARE)) {
 	    consume();
 	    Exp key = exp();
-
 	    match(Kind.RSQUARE);
 	    match(ASSIGN);
 	    Exp value = exp();
 	    f = new FieldExpKey(first, key, value);
 	} else if (isKind(NAME)) {
 	    Name name = new Name(t, t.text);
-	    consume();
-	    match(ASSIGN);
-	    Exp exp = exp();
-	    f = new FieldNameKey(first, name, exp);
-	} else {
-	    f = new FieldImplicitKey(first, exp());
-	}
-	fieldList.add(f);
-	while (isKind(COMMA, SEMI)) {
-	    consume();
-	    if (isKind(Kind.LSQUARE)) {
-
-		Exp key = exp();
-		match(Kind.RSQUARE);
-		match(ASSIGN);
-		Exp value = exp();
-		fieldList.add(new FieldExpKey(first, key, value));
-	    } else if (isKind(NAME)) {
-		Name name = new Name(t, t.text);
-		consume();
-		match(ASSIGN);
+	    if (isKind(ASSIGN)) {
 		Exp exp = exp();
-		fieldList.add(new FieldNameKey(first, name, exp));
+		f = new FieldNameKey(first, name, exp);
 	    } else {
-		fieldList.add(new FieldImplicitKey(first, exp()));
+		Exp exp = exp();
+		f = new FieldImplicitKey(first, exp);
 	    }
+	} else {
+	    Exp exp = exp();
+	    f = new FieldImplicitKey(first, exp);
 	}
-	return fieldList;
-    }
-
-    private Field field() {
-	// TODO Auto-generated method stub
-	return null;
+	return f;
     }
 
     private FuncBody functionBody() throws Exception {
