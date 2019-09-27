@@ -260,14 +260,17 @@ public class ExpressionParser {
 	Token first = t;
 	Exp e0 = null;
 	Exp e1 = null;
-	e0 = precPow();
-	while (unaryOp.contains(t.kind)) {
+	if (unaryOp.contains(t.kind)) {
 	    Token op = t;
 	    consume();
-	    e1 = precPow();
+	    e1 = exp();
 	    e0 = new ExpUnary(first, op.kind, e1);
+	    return e0;
 	}
-	return e0;
+	else {
+	    return precPow();
+	}
+	
     }
 
     private Exp precPow() throws Exception {
