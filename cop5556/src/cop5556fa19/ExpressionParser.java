@@ -260,16 +260,15 @@ public class ExpressionParser {
 	Token first = t;
 	Exp e0 = null;
 	Exp e1 = null;
+	if(!unaryOp.contains(t.kind))
+	 e0 = precPow();
 	if (unaryOp.contains(t.kind)) {
 	    Token op = t;
 	    consume();
-	    e1 = exp();
+	    e1 = precPow();
 	    e0 = new ExpUnary(first, op.kind, e1);
-	    return e0;
 	}
-	else {
-	    return precPow();
-	}
+	return e0;
 	
     }
 
@@ -372,6 +371,7 @@ public class ExpressionParser {
 	    consume();
 	    e1 = exp();
 	    e0 = new ExpUnary(first, Kind.OP_HASH, e1);
+	    consume();
 	    break;
 
 	case BIT_XOR:

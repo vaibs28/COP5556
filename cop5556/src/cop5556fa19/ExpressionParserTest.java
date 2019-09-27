@@ -62,7 +62,7 @@ class ExpressionParserTest {
 		Scanner scanner = new Scanner(r); // Create a Scanner and initialize it
 		ExpressionParser parser = new ExpressionParser(scanner);  // Create a parser
 		Exp e = parser.exp(); // Parse and expression
-		show(e);  //Show the resulting AST
+		show("e=" + e);  //Show the resulting AST
 		return e;
 	}
 	
@@ -166,9 +166,9 @@ class ExpressionParserTest {
 	void testPowPrec() throws Exception {
 		String input = "2^3^4";
 		Exp e = parseAndShow(input);
-		//Exp expected = Expressions.makeBinary(Expressions.makeBinary(3,OP_POW,4) , OP_PLUS ,  Expressions.);
-		//show("expected=" + expected);
-		//assertEquals(expected,e);
+		Exp expected = Expressions.makeBinary(Expressions.makeInt(2) , OP_POW ,  Expressions.makeBinary(3, OP_POW, 4));
+		show("expected=" + expected);
+		assertEquals(expected,e);
 	
 	}
 	
@@ -188,7 +188,7 @@ class ExpressionParserTest {
 	
 	@Test
 	void testValidFieldList() throws Exception{
-	    String input = "{a,b,c}";
+	    String input = "{[a]=b}";
 	    Exp e = parseAndShow(input);
 	}
 	
@@ -203,5 +203,17 @@ class ExpressionParserTest {
 	    String input = "{}";
 	    Exp e = parseAndShow(input);
 	}
+	
+	@Test
+	void testParenthesesExp() throws Exception{
+	  
+	    parseAndShow("#5+4");
+	}
 
+	@Test
+	void testExp() throws Exception{
+	  
+	    parseAndShow("a ^ b * c ^ d + e ^ f / g ^ (h + i)");
+
+	}
 }
