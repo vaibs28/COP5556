@@ -260,8 +260,8 @@ public class ExpressionParser {
 	Token first = t;
 	Exp e0 = null;
 	Exp e1 = null;
-	if(!unaryOp.contains(t.kind))
-	 e0 = precPow();
+	if (!unaryOp.contains(t.kind))
+	    e0 = precPow();
 	if (unaryOp.contains(t.kind)) {
 	    Token op = t;
 	    consume();
@@ -269,7 +269,7 @@ public class ExpressionParser {
 	    e0 = new ExpUnary(first, op.kind, e1);
 	}
 	return e0;
-	
+
     }
 
     private Exp precPow() throws Exception {
@@ -334,7 +334,7 @@ public class ExpressionParser {
 	    FuncBody fnBody = functionBody();
 	    e0 = new ExpFunction(first, fnBody);
 	    match(KW_end);
-	    consume();
+	    // consume();
 	    break;
 
 	case NAME:
@@ -374,12 +374,10 @@ public class ExpressionParser {
 	    consume();
 	    break;
 
-	case BIT_XOR:
-	    consume();
-	    e1 = exp();
-	    e0 = new ExpUnary(first, Kind.BIT_XOR, e1);
-	    break;
-
+	/*
+	 * case BIT_XOR: consume(); e1 = exp(); e0 = new ExpUnary(first, Kind.BIT_XOR,
+	 * e1); break;
+	 */
 	default:
 	    throw new SyntaxException(first, "invalid token");
 
@@ -396,6 +394,9 @@ public class ExpressionParser {
 	fieldList.add(f);
 	while (isKind(COMMA, SEMI)) {
 	    consume();
+	    if (isKind(RCURLY)) {
+		return fieldList;
+	    }
 	    fieldList.add(field());
 	}
 	return fieldList;
@@ -444,16 +445,21 @@ public class ExpressionParser {
 	ParList pList = null;
 	List<Name> nList = null;
 	boolean hasVarArgs = true;
-	if (t.kind == Kind.DOTDOTDOT) {
-	    pList = new ParList(t, nList, hasVarArgs);
-	    consume();
-	} else if (t.kind == Kind.RPAREN) {
+
+	if (t.kind == Kind.RPAREN) {
 	    hasVarArgs = false;
 	    pList = new ParList(t, nList, hasVarArgs);
 	} else {
-	    hasVarArgs = false;
-	    nList = nameList();
-	    pList = new ParList(t, nList, hasVarArgs);
+	    while (t.kind != RPAREN) {
+		if (t.kind == NAME) {
+		    hasVarArgs = false;
+		    nList = nameList();
+		    pList = new ParList(t, nList, hasVarArgs);
+		} else if (t.kind == Kind.DOTDOTDOT) {
+		    pList = new ParList(t, nList, hasVarArgs);
+		    consume();
+		}
+	    }
 	}
 	return pList;
 
@@ -469,6 +475,7 @@ public class ExpressionParser {
 		nameList.add(new Name(t, t.getName()));
 		consume();
 	    }
+
 	}
 
 	return nameList;
