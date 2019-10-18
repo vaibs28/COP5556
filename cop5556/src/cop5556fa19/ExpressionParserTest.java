@@ -202,7 +202,7 @@ class ExpressionParserTest {
 
     @Test
     void failed3() throws Exception {
-	//still failing
+	// still failing
 	parseAndShow("1 ~ 2 | 3 & 4");
 	// expected - ExpBinary[e0=ExpBinary[e0=ExpInt[v=1],op=BIT_XOR,e1=ExpInt[v=2]],
 	// op = BIT_OR, e1=ExpBin[eo=ExpInt[v=3],op = BIT_AMP, e1=ExpInt[v=4]]
@@ -222,23 +222,28 @@ class ExpressionParserTest {
 	parseAndShow("function (aa,b) end >> function(test, I, ...) end ");
 
     }
-    
+
     @Test
     void failed6() throws Exception {
 
 	parseAndShow("function (...) end");
 
     }
-    
-    //tests for block
-    
+
+    // tests for block
+
     @Test
-    void blockTest1() throws Exception{
+    void blockTest1() throws Exception {
 	parseAndShow("function() break break break break end");
     }
-    
+
     @Test
-    void blockTest2() throws Exception{
+    void blockTest2() throws Exception {
 	parseAndShow("function() goto abc goto def goto xyz break goto x :: abc :: end");
+    }
+
+    @Test
+    void blockTest3() throws Exception {
+	parseAndShow("function() do break break break goto x :: abc :: end end");
     }
 }

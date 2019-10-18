@@ -521,7 +521,6 @@ public class ExpressionParser {
 		statList.add(sl);
 		consume();
 		match(COLONCOLON);
-
 	    } else if (isKind(KW_break)) {
 		consume();
 		statList.add(new StatBreak(t));
@@ -531,8 +530,9 @@ public class ExpressionParser {
 		statList.add(new StatGoto(first, name));
 		consume();
 	    } else if (isKind(KW_do)) {
-		Block block = new Block(first, statList);
-		statList.add(new StatDo(first, block));
+		consume();
+		Block b = block();
+		statList.add(new StatDo(first, b));
 	    } else if (isKind(KW_while)) {
 		consume();
 		Exp e0 = exp();
