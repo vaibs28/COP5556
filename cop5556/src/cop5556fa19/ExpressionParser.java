@@ -540,7 +540,6 @@ public class ExpressionParser {
 		Block b = block();
 		StatWhile sw = new StatWhile(first, e0, b);
 		statList.add(sw);
-		consume();
 		match(KW_end);
 	    } else if (isKind(KW_repeat)) {
 		consume();
@@ -549,7 +548,6 @@ public class ExpressionParser {
 		Exp e0 = exp();
 		StatRepeat sr = new StatRepeat(first, b, e0);
 		statList.add(sr);
-		consume();
 	    } else if (isKind(KW_if)) {
 		StatIf sf;
 		List<Exp> expList = new ArrayList<>();

@@ -246,4 +246,19 @@ class ExpressionParserTest {
     void blockTest3() throws Exception {
 	parseAndShow("function() do break break break goto x :: abc :: end end");
     }
+
+    @Test
+    void blockTest4() throws Exception {
+	parseAndShow("function() while true do break end end");
+    }
+
+    @Test
+    void blockTest5() throws Exception {
+	parseAndShow("function() repeat break until true end");
+    }
+
+    @Test
+    void blockTest6() throws Exception {
+	parseAndShow("function() if true then break elseif false then break else break goto a end end");
+    }
 }
