@@ -38,6 +38,15 @@ import cop5556fa19.AST.FieldNameKey;
 import cop5556fa19.AST.FuncBody;
 import cop5556fa19.AST.Name;
 import cop5556fa19.AST.ParList;
+import cop5556fa19.AST.Stat;
+import cop5556fa19.AST.StatBreak;
+import cop5556fa19.AST.StatDo;
+import cop5556fa19.AST.StatFor;
+import cop5556fa19.AST.StatGoto;
+import cop5556fa19.AST.StatIf;
+import cop5556fa19.AST.StatLabel;
+import cop5556fa19.AST.StatRepeat;
+import cop5556fa19.AST.StatWhile;
 import cop5556fa19.Token.Kind;
 import static cop5556fa19.Token.Kind.*;
 
@@ -436,7 +445,8 @@ public class ExpressionParser {
 	match(LPAREN);
 	pList = parList();
 	match(RPAREN);
-	fnBody = new FuncBody(first, pList, null);
+	Block b = block();
+	fnBody = new FuncBody(first, pList, b);
 	return fnBody;
     }
 
@@ -492,8 +502,103 @@ public class ExpressionParser {
 	return exp;
     }
 
-    private Block block() {
-	return new Block(null); // this is OK for Assignment 2
+    /* Assignment 3 start - additional methods for parsing block */
+
+    private Block block() throws Exception {
+	Token first = t;
+	List<Stat> stats = getStatsList();
+	return new Block(first, stats);
+    }
+
+    private List<Stat> getStatsList() throws Exception {
+	List<Stat> statList = new ArrayList<>();
+	Token first = t;
+	while (isKind(COLONCOLON, KW_break, KW_goto, KW_do, KW_while, KW_repeat, KW_if, KW_for)) {
+	    if (isKind(COLONCOLON)) {
+		StatLabel sl = label();
+		match(COLONCOLON);
+		statList.add(sl);
+	    } else if (isKind(KW_break)) {
+		consume();
+		statList.add(new StatBreak(t));
+	    } else if (isKind(KW_goto)) {
+		consume();
+		Name name = new Name(t, t.text);
+		statList.add(new StatGoto(first, name));
+		consume();
+	    } else if (isKind(KW_do)) {
+		Block block = new Block(first, statList);
+		statList.add(new StatDo(first, block));
+	    } else if (isKind(KW_while)) {
+		consume();
+		Exp e0 = exp();
+		match(KW_do);
+		Block b = block();
+		StatWhile sw = new StatWhile(first, e0, b);
+		statList.add(sw);
+		consume();
+		match(KW_end);
+	    } else if (isKind(KW_repeat)) {
+		consume();
+		Block b = block();
+		match(KW_until);
+		Exp e0 = exp();
+		StatRepeat sr = new StatRepeat(first, b, e0);
+		statList.add(sr);
+		consume();
+	    } else if (isKind(KW_if)) {
+		StatIf sf;
+		List<Exp> expList = new ArrayList<>();
+		List<Block> blockList = new ArrayList<>();
+		consume();
+		Exp e0 = exp();
+		match(KW_then);
+		Block b = block();
+		expList.add(e0);
+		blockList.add(b);
+		while (t.kind == KW_elseif) {
+		    consume();
+		    Exp e1 = exp();
+		    match(KW_then);
+		    Block b1 = block();
+		    expList.add(e1);
+		    blockList.add(b1);
+		}
+		if (isKind(KW_else)) {
+		    consume();
+		    Block b1 = block();
+		    blockList.add(b1);
+		}
+		match(KW_end);
+		sf = new StatIf(first, expList, blockList);
+		statList.add(sf);
+	    } else if (isKind(KW_for)) {
+		StatFor sf = null;
+		ExpName name = new ExpName(first.text);
+		match(Kind.ASSIGN);
+		Exp e0 = exp();
+		match(Kind.COMMA);
+		Exp e1 = exp();
+		Exp e2 = null;
+		if (isKind(COMMA)) {
+		    e2 = exp();
+		}
+		match(KW_do);
+		Block b0 = block();
+		match(KW_end);
+		sf = new StatFor(first, name, e0, e1, e2, b0);
+		statList.add(sf);
+	    }
+	}
+	return statList;
+    }
+
+    public StatLabel label() {
+	Token first = t;
+	Name label = new Name(first, t.text);
+	StatLabel sl = new StatLabel(first, label);
+	return sl;
+
     }
 
     protected boolean isKind(Kind kind) {

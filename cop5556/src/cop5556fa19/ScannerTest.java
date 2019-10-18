@@ -310,7 +310,7 @@ class ScannerTest {
 
 	show(t = s.getNext());
 	assertEquals(t.kind, STRINGLIT);
-	assertEquals(t.text, "abc123");
+	assertEquals(t.text, "\"abc123\"");
 
     }
 
@@ -529,7 +529,7 @@ class ScannerTest {
 
 	show(t = s.getNext());
 	assertEquals(t.kind, STRINGLIT);
-	assertEquals(t.text, "abc\b");
+	assertEquals(t.text, "\"abc" + (char) 7 + "\"");
 
     }
 
@@ -555,34 +555,59 @@ class ScannerTest {
 
     @Test
     void test23() throws Exception {
-	Reader r = new StringReader("--this is a comment \n a=d");
+	Reader r = new StringReader("aaaaa--comment\n1234--comment\r\nbbbb");
 	Scanner s = new Scanner(r);
 	Token t;
 
 	show(t = s.getNext());
-	assertEquals(t.kind, NAME);
-	assertEquals(t.text, "a");
+	// assertEquals(t.kind, KW_while);
+	// assertEquals(t.text, "while");
 
 	show(t = s.getNext());
-	assertEquals(t.kind, ASSIGN);
-	assertEquals(t.text, "=");
+	// assertEquals(t.kind, NAME);
+	// assertEquals(t.text, "do");
 
 	show(t = s.getNext());
-	assertEquals(t.kind, NAME);
-	assertEquals(t.text, "d");
+	// assertEquals(t.kind, NAME);
+	// assertEquals(t.text, "and");
 
     }
-    
-    //test for strlit
+
+    // test for strlit
     @Test
     void test24() throws Exception {
-	Reader r = new StringReader("\"a''b\\tb''c\\n\'");
+	Reader r = new StringReader("\"\\a \\b\"");
 	Scanner s = new Scanner(r);
 	Token t;
 
 	show(t = s.getNext());
 	assertEquals(t.kind, STRINGLIT);
-	assertEquals(t.text, "\"abc\\n\"");
+	// assertEquals(t.text, "\"abc\\n\"");
 
+    }
+
+    // failed tests
+
+    @Test
+    void failedTest() throws Exception {
+	String file = "testInputFiles/test2.input";
+	Reader r = new BufferedReader(new FileReader(file));
+	Scanner s = new Scanner(r);
+	s.getNext();
+
+	assertThrows(LexicalException.class, () -> {
+	    s.getNext();
+	});
+
+    }
+
+    @Test
+    void test26() throws Exception {
+	Reader r = new StringReader("-10");
+	Scanner s = new Scanner(r);
+	Token t;
+
+	show(t = s.getNext());
+	show(t = s.getNext());
     }
 }

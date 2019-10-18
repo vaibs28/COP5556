@@ -2,36 +2,30 @@ package cop5556fa19.AST;
 
 import cop5556fa19.Token;
 
-public class FieldNameKey extends Field {
-	
-	public final Name name;
-	public final Exp exp;
-	
-	
+public class StatFunction extends Stat {
 
-	public FieldNameKey(Token firstToken, Name name, Exp exp) {
+	public final FuncName name;
+	public final FuncBody body;
+
+	public StatFunction(Token firstToken, FuncName name, FuncBody body) {
 		super(firstToken);
 		this.name = name;
-		this.exp = exp;
+		this.body = body;
 	}
-
 
 	@Override
 	public String toString() {
-		return "FieldNameKey [name=" + name + ", exp=" + exp +  "]";
+		return "StatFunction [name=" + name + ", body=" + body +  "]";
 	}
-
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((exp == null) ? 0 : exp.hashCode());
+		result = prime * result + ((body == null) ? 0 : body.hashCode());
 		result = prime * result + ((name == null) ? 0 : name.hashCode());
 		return result;
 	}
-
-
 
 	@Override
 	public boolean equals(Object obj) {
@@ -41,11 +35,11 @@ public class FieldNameKey extends Field {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		FieldNameKey other = (FieldNameKey) obj;
-		if (exp == null) {
-			if (other.exp != null)
+		StatFunction other = (StatFunction) obj;
+		if (body == null) {
+			if (other.body != null)
 				return false;
-		} else if (!exp.equals(other.exp))
+		} else if (!body.equals(other.body))
 			return false;
 		if (name == null) {
 			if (other.name != null)
@@ -55,11 +49,9 @@ public class FieldNameKey extends Field {
 		return true;
 	}
 
-
-
 	@Override
 	public Object visit(ASTVisitor v, Object arg) throws Exception {
-		return v.visitFieldNameKey(this,arg);
+		return v.visitStatFunction(this, arg);
 	}
 
 }

@@ -2,30 +2,23 @@ package cop5556fa19.AST;
 
 import cop5556fa19.Token;
 
-public class ExpTrue extends Exp {
+public class StatBreak extends Stat {
+	
+	public static final StatBreak statBreakConst = new StatBreak(null);
 
-	
-	public static final ExpTrue expTrueConst = new ExpTrue(null);
-	
-	public ExpTrue(Token firstToken) {
+	public StatBreak(Token firstToken) {
 		super(firstToken);
 	}
-	
-	
 
 	@Override
 	public String toString() {
-		return "ExpTrue";
+		return "StatBreak";
 	}
-
-
 
 	@Override
 	public int hashCode() {
 		return 0;
 	}
-
-
 
 	@Override
 	public boolean equals(Object obj) {
@@ -38,13 +31,9 @@ public class ExpTrue extends Exp {
 		return true;
 	}
 
-
-
 	@Override
 	public Object visit(ASTVisitor v, Object arg) throws Exception {
-		return v.visitExpTrue(this,arg);
+		return v.visitStatBreak(this, arg);
 	}
-
-
 
 }
