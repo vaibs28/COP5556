@@ -513,11 +513,15 @@ public class ExpressionParser {
     private List<Stat> getStatsList() throws Exception {
 	List<Stat> statList = new ArrayList<>();
 	Token first = t;
-	while (isKind(COLONCOLON, KW_break, KW_goto, KW_do, KW_while, KW_repeat, KW_if, KW_for)) {
+	while (isKind(COLONCOLON, KW_break, KW_goto, KW_do, KW_while, KW_repeat, KW_if, KW_for, KW_function,
+		KW_local)) {
 	    if (isKind(COLONCOLON)) {
+		consume();
 		StatLabel sl = label();
-		match(COLONCOLON);
 		statList.add(sl);
+		consume();
+		match(COLONCOLON);
+
 	    } else if (isKind(KW_break)) {
 		consume();
 		statList.add(new StatBreak(t));
@@ -595,7 +599,7 @@ public class ExpressionParser {
 
     public StatLabel label() {
 	Token first = t;
-	Name label = new Name(first, t.text);
+	Name label = new Name(t, t.text);
 	StatLabel sl = new StatLabel(first, label);
 	return sl;
 

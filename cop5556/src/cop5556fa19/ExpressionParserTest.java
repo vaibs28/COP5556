@@ -239,6 +239,6 @@ class ExpressionParserTest {
     
     @Test
     void blockTest2() throws Exception{
-	parseAndShow("function() goto abc goto def goto xyz break end");
+	parseAndShow("function() goto abc goto def goto xyz break goto x :: abc :: end");
     }
 }
