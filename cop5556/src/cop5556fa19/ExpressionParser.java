@@ -36,12 +36,15 @@ import cop5556fa19.AST.FieldExpKey;
 import cop5556fa19.AST.FieldImplicitKey;
 import cop5556fa19.AST.FieldNameKey;
 import cop5556fa19.AST.FuncBody;
+import cop5556fa19.AST.FuncName;
 import cop5556fa19.AST.Name;
 import cop5556fa19.AST.ParList;
 import cop5556fa19.AST.Stat;
 import cop5556fa19.AST.StatBreak;
 import cop5556fa19.AST.StatDo;
 import cop5556fa19.AST.StatFor;
+import cop5556fa19.AST.StatForEach;
+import cop5556fa19.AST.StatFunction;
 import cop5556fa19.AST.StatGoto;
 import cop5556fa19.AST.StatIf;
 import cop5556fa19.AST.StatLabel;
@@ -502,7 +505,7 @@ public class ExpressionParser {
 	return exp;
     }
 
-    /* Assignment 3 start - additional methods for parsing block */
+    /******** Assignment 3 start - additional methods for parsing block ******/
 
     private Block block() throws Exception {
 	Token first = t;
@@ -575,24 +578,69 @@ public class ExpressionParser {
 		sf = new StatIf(first, expList, blockList);
 		statList.add(sf);
 	    } else if (isKind(KW_for)) {
+		consume();
 		StatFor sf = null;
-		ExpName name = new ExpName(first.text);
-		match(Kind.ASSIGN);
-		Exp e0 = exp();
-		match(Kind.COMMA);
-		Exp e1 = exp();
-		Exp e2 = null;
-		if (isKind(COMMA)) {
-		    e2 = exp();
+		ExpName name = new ExpName(t.text);
+		List<ExpName> names = null;
+		names = getExpNameList();
+		if (t.kind == Kind.ASSIGN) {
+		    consume();
+		    Exp e0 = exp();
+		    match(Kind.COMMA);
+		    Exp e1 = exp();
+		    Exp e2 = null;
+		    if (isKind(COMMA)) {
+			consume();
+			e2 = exp();
+		    }
+		    match(KW_do);
+		    Block b0 = block();
+		    match(KW_end);
+		    sf = new StatFor(first, name, e0, e1, e2, b0);
+		    statList.add(sf);
+		} else if (t.kind == KW_in) {
+		    consume();
+
+		    List<Exp> exps = getExpList();
+		    match(KW_do);
+		    Block b = block();
+		    match(KW_end);
+		    StatForEach sfe = new StatForEach(first, names, exps, b);
+		    statList.add(sfe);
 		}
-		match(KW_do);
-		Block b0 = block();
-		match(KW_end);
-		sf = new StatFor(first, name, e0, e1, e2, b0);
+	    } else if (isKind(Kind.KW_function)) {
+		consume();
+		FuncName fn = getFuncName();
+		FuncBody fb = functionBody();
+		StatFunction sf = new StatFunction(first, fn, fb);
 		statList.add(sf);
 	    }
 	}
 	return statList;
+    }
+
+    private List<ExpName> getExpNameList() throws Exception {
+	List<ExpName> names = new ArrayList<>();
+	names.add(new ExpName(t.text));
+	consume();
+	while (isKind(DOT)) {
+	    consume();
+	    if (t.kind == NAME) {
+		names.add(new ExpName(t.getName()));
+		consume();
+	    }
+	}
+	return names;
+    }
+
+    private List<Exp> getExpList() throws Exception {
+	List<Exp> expList = new ArrayList<>();
+	expList.add(exp());
+	while (isKind(COMMA)) {
+	    consume();
+	    expList.add(exp());
+	}
+	return expList;
     }
 
     public StatLabel label() {
@@ -601,6 +649,15 @@ public class ExpressionParser {
 	StatLabel sl = new StatLabel(first, label);
 	return sl;
 
+    }
+
+    public FuncName getFuncName() throws Exception {
+	Token first = t;
+	List<ExpName> names = getExpNameList();
+	consume();
+	ExpName nameAfterColon = new ExpName(t);
+	FuncName fn = new FuncName(first, names, nameAfterColon);
+	return fn;
     }
 
     protected boolean isKind(Kind kind) {

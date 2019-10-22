@@ -259,6 +259,22 @@ class ExpressionParserTest {
 
     @Test
     void blockTest6() throws Exception {
-	parseAndShow("function() if true then break elseif false then break else break goto a end end");
+	parseAndShow("function() if true then break elseif false then break elseif abc then goto x else break goto a end end");
+    }
+    
+    @Test
+    void blockTest7() throws Exception {
+	parseAndShow("function() for a = true , false , nil do break end end");
+    }
+    
+    @Test
+    void blockTest8() throws Exception {
+	parseAndShow("function() for a,b,c in true,false do break end end");
+    }
+    
+    @Test
+    void blockTest9() throws Exception {
+	parseAndShow("function() function abc.def:xyz (a,b,c) break end end");
     }
 }
+
