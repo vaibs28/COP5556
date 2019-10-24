@@ -259,22 +259,69 @@ class ExpressionParserTest {
 
     @Test
     void blockTest6() throws Exception {
-	parseAndShow("function() if true then break elseif false then break elseif abc then goto x else break goto a end end");
+	parseAndShow(
+		"function() if true then break elseif false then break elseif abc then goto x else break goto a end end");
     }
-    
+
     @Test
     void blockTest7() throws Exception {
 	parseAndShow("function() for a = true , false , nil do break end end");
     }
-    
+
     @Test
     void blockTest8() throws Exception {
 	parseAndShow("function() for a,b,c in true,false do break end end");
     }
-    
+
     @Test
     void blockTest9() throws Exception {
 	parseAndShow("function() function abc.def:xyz (a,b,c) break end end");
     }
-}
 
+    @Test
+    void blockTest10() throws Exception {
+	parseAndShow("function() function abc (a,b,c) break end end");
+    }
+
+    @Test
+    void blockTest11() throws Exception {
+	parseAndShow("function() local function abc (a,b,c) break end end");
+    }
+
+    @Test
+    void blockTest12() throws Exception {
+	parseAndShow("function() local function abc (a,b,c) break end end");
+    }
+
+    // varlist = explist
+    @Test
+    void blockTest13() throws Exception {
+	parseAndShow("function() a,b,c = true,false x,y = true,false,nil end");
+    }
+
+    // exp = prefixexp
+    // prefixexp = var
+    // var = Name | prefixexp '[' exp ']' | prefixexp '.' Name
+    @Test
+    void blockTest14() throws Exception {
+	parseAndShow("a[f](g)");
+    }
+
+    /*
+     * f(a)[b] is an expression
+     * 
+     * e=ExpTableLookup [table=ExpFunctionCall [f=ExpName [name=f], args=[ExpName
+     * [name=a]]], key=ExpName [name=b]]
+     * 
+     * 
+     * 
+     * f (a) [b] "g" is also an expression e=ExpFunctionCall [f=ExpTableLookup
+     * [table=ExpFunctionCall [f=ExpName [name=f], args=[ExpName [name=a]]],
+     * key=ExpName [name=b]], args=[ExpString [v=g]]]
+     * 
+     */
+    @Test
+    void blockTest15() throws Exception {
+	parseAndShow("f (a) [b] [g] ()");
+    }
+}

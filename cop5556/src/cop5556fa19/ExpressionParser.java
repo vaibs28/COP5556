@@ -23,11 +23,13 @@ import cop5556fa19.AST.Exp;
 import cop5556fa19.AST.ExpBinary;
 import cop5556fa19.AST.ExpFalse;
 import cop5556fa19.AST.ExpFunction;
+import cop5556fa19.AST.ExpFunctionCall;
 import cop5556fa19.AST.ExpInt;
 import cop5556fa19.AST.ExpName;
 import cop5556fa19.AST.ExpNil;
 import cop5556fa19.AST.ExpString;
 import cop5556fa19.AST.ExpTable;
+import cop5556fa19.AST.ExpTableLookup;
 import cop5556fa19.AST.ExpTrue;
 import cop5556fa19.AST.ExpUnary;
 import cop5556fa19.AST.ExpVarArgs;
@@ -39,7 +41,9 @@ import cop5556fa19.AST.FuncBody;
 import cop5556fa19.AST.FuncName;
 import cop5556fa19.AST.Name;
 import cop5556fa19.AST.ParList;
+import cop5556fa19.AST.RetStat;
 import cop5556fa19.AST.Stat;
+import cop5556fa19.AST.StatAssign;
 import cop5556fa19.AST.StatBreak;
 import cop5556fa19.AST.StatDo;
 import cop5556fa19.AST.StatFor;
@@ -48,6 +52,8 @@ import cop5556fa19.AST.StatFunction;
 import cop5556fa19.AST.StatGoto;
 import cop5556fa19.AST.StatIf;
 import cop5556fa19.AST.StatLabel;
+import cop5556fa19.AST.StatLocalAssign;
+import cop5556fa19.AST.StatLocalFunc;
 import cop5556fa19.AST.StatRepeat;
 import cop5556fa19.AST.StatWhile;
 import cop5556fa19.Token.Kind;
@@ -350,8 +356,9 @@ public class ExpressionParser {
 	    break;
 
 	case NAME:
-	    e0 = new ExpName(first.text);
-	    consume();
+	    // e0 = new ExpName(first.text); replacing with prefixexp for assgn 3
+	    e0 = prefixexp();
+	    // consume();
 	    break;
 
 	case LPAREN:
@@ -363,7 +370,7 @@ public class ExpressionParser {
 	case LCURLY:
 	    consume();
 	    List<Field> fieldList = fieldList();
-	    e0 = new ExpTable(first, fieldList);
+	    e0 = tableConstructor(first, fieldList);
 	    match(Kind.RCURLY);
 	    break;
 
@@ -395,6 +402,10 @@ public class ExpressionParser {
 
 	}
 	return e0;
+    }
+
+    private ExpTable tableConstructor(Token first, List<Field> fieldList) {
+	return new ExpTable(first, fieldList);
     }
 
     private List<Field> fieldList() throws Exception {
@@ -444,7 +455,8 @@ public class ExpressionParser {
 	Token first = t;
 	FuncBody fnBody = null;
 	ParList pList = null;
-	consume();
+	if (!isKind(LPAREN))
+	    consume();
 	match(LPAREN);
 	pList = parList();
 	match(RPAREN);
@@ -516,9 +528,11 @@ public class ExpressionParser {
     private List<Stat> getStatsList() throws Exception {
 	List<Stat> statList = new ArrayList<>();
 	Token first = t;
-	while (isKind(COLONCOLON, KW_break, KW_goto, KW_do, KW_while, KW_repeat, KW_if, KW_for, KW_function,
-		KW_local)) {
-	    if (isKind(COLONCOLON)) {
+	while (isKind(SEMI, COLONCOLON, KW_break, KW_goto, KW_do, KW_while, KW_repeat, KW_if, KW_for, KW_function,
+		KW_local, NAME)) {
+	    if (isKind(SEMI)) {
+		consume();
+	    } else if (isKind(COLONCOLON)) {
 		consume();
 		StatLabel sl = label();
 		statList.add(sl);
@@ -614,16 +628,43 @@ public class ExpressionParser {
 		FuncBody fb = functionBody();
 		StatFunction sf = new StatFunction(first, fn, fb);
 		statList.add(sf);
+	    } else if (isKind(Kind.KW_local)) {
+		consume();
+		if (isKind(KW_function)) {
+		    consume();
+		    // match(Kind.NAME);
+		    StatLocalFunc slf = new StatLocalFunc(first, getFuncName(), functionBody());
+		    statList.add(slf);
+		} else {
+		    StatLocalAssign sla = new StatLocalAssign(first, getExpNameList(), getExpList());
+		    statList.add(sla);
+		}
+	    } else if (isKind(NAME)) {
+		// varlist = explist
+		List<Exp> varList = getVarList();
+		List<Exp> expList = getExpList();
+		StatAssign sa = new StatAssign(first, varList, expList);
+		statList.add(sa);
 	    }
 	}
 	return statList;
+    }
+
+    private List<Exp> getVarList() throws Exception {
+	List<Exp> varList = new ArrayList<>();
+	varList.add(var());
+	while (isKind(COMMA)) {
+	    consume();
+	    varList.add(exp());
+	}
+	return varList;
     }
 
     private List<ExpName> getExpNameList() throws Exception {
 	List<ExpName> names = new ArrayList<>();
 	names.add(new ExpName(t.text));
 	consume();
-	while (isKind(DOT)) {
+	while (isKind(COMMA)) {
 	    consume();
 	    if (t.kind == NAME) {
 		names.add(new ExpName(t.getName()));
@@ -634,6 +675,8 @@ public class ExpressionParser {
     }
 
     private List<Exp> getExpList() throws Exception {
+	if (isKind(ASSIGN))
+	    consume();
 	List<Exp> expList = new ArrayList<>();
 	expList.add(exp());
 	while (isKind(COMMA)) {
@@ -653,11 +696,138 @@ public class ExpressionParser {
 
     public FuncName getFuncName() throws Exception {
 	Token first = t;
-	List<ExpName> names = getExpNameList();
-	consume();
-	ExpName nameAfterColon = new ExpName(t);
+	List<ExpName> names = getFunNameList();
+	ExpName nameAfterColon = null;
+	if (t.kind == COLON) {
+	    consume();
+	    nameAfterColon = new ExpName(t);
+	}
 	FuncName fn = new FuncName(first, names, nameAfterColon);
 	return fn;
+    }
+
+    private List<ExpName> getFunNameList() throws Exception {
+	List<ExpName> names = new ArrayList<>();
+	names.add(new ExpName(t.text));
+	consume();
+	while (isKind(DOT)) {
+	    consume();
+	    if (t.kind == NAME) {
+		names.add(new ExpName(t.getName()));
+		consume();
+	    }
+	}
+	return names;
+    }
+
+    public RetStat retStat() throws Exception {
+	match(KW_return);
+	Token first = t;
+	RetStat rs = null;
+	List<Exp> el = getExpList();
+	rs = new RetStat(first, el);
+	return rs;
+    }
+
+    // var ::= Name | prefixexp ‘[’ exp ‘]’ | prefixexp ‘.’ Name
+    // functioncall ::= prefixexp args | prefixexp ‘:’ Name args
+    // prefixexp ::= Name prefixexpTail | (exp) prefixexpTail
+    // prefixexpTail::= '['exp']'prefixexpTail | '.'prefixexpTail |
+    // args prefixexpTail| ':' Name args
+    // args ::= `(´ [explist] `)´ | tableconstructor | String
+
+    public Exp var() throws Exception {
+	Exp e = null;
+	if (isKind(NAME)) {
+	    e = prefixexp();
+	} else {
+	    prefixexp();
+	    if (isKind(LSQUARE)) {
+		consume();
+		e = exp();
+		match(RSQUARE);
+	    } else if (isKind(DOT)) {
+		match(NAME);
+		e = exp();
+	    }
+	}
+	return e;
+    }
+
+    // prefixexpTail::= '['exp']'prefixexpTail | '.'prefixexpTail | args
+    // prefixexpTail| ':' Name args
+    public Exp prefixexp() throws Exception {
+	Exp e = null;
+	Token first = t;
+	if (isKind(NAME)) {
+	    e = prefixexpTail();
+	    // e = new ExpName(first.text);
+	} else if (isKind(LPAREN)) {
+	    e = exp();
+	    match(RPAREN);
+	    prefixexpTail();
+	}
+	return e;
+    }
+
+    // prefixexpTail::= '['exp']'prefixexpTail | '.'prefixexpTail |
+    // args prefixexpTail| ':' Name args
+    public Exp prefixexpTail() throws Exception {
+	Token first = t;
+	// ExpFunctionCall fnCall = null;
+	Exp tableLookup = null;
+	List<Exp> args = null;
+	tableLookup = new ExpName(first.text);
+	Exp table = new ExpName(first.text);
+	consume(); // consume name
+	while (isKind(LPAREN, LSQUARE, STRINGLIT)) {
+
+	    if (isKind(Kind.LSQUARE)) {
+		consume();
+		Exp key = exp();
+		match(Kind.RSQUARE);
+		tableLookup = new ExpTableLookup(first, tableLookup, key);
+	    } else if (isKind(DOT)) {
+		consume();
+		match(NAME);
+		prefixexpTail();
+	    } else if (isKind(COLON)) {
+		match(NAME);
+		// tableLookup = args();
+	    } else if (isKind(LPAREN)) {
+		Exp f = tableLookup;
+		args = args();
+		tableLookup = new ExpFunctionCall(first, f, args);
+	    } else if (isKind(STRINGLIT)) {
+		Exp f = tableLookup;
+		args = args();
+		tableLookup = new ExpFunctionCall(first, f, args);
+		consume();
+	    } else {
+		tableLookup = new ExpName(first.text);
+	    }
+	}
+	return tableLookup;
+    }
+
+    // args ::= `(´ [explist] `)´ | tableconstructor | String
+    public List<Exp> args() throws Exception {
+	Token first = t;
+	Exp e = null;
+	List<Exp> eList = new ArrayList<>();
+	if (isKind(Kind.LPAREN)) {
+	    eList = getExpList();
+	    // e = exp();
+	    // eList.add(e);
+	} else if (isKind(LCURLY)) {
+	    e = tableConstructor(first, fieldList());
+	    // match(RCURLY);
+	    eList.add(e);
+	} else if (isKind(STRINGLIT)) {
+	    e = new ExpString(first);
+	    eList.add(e);
+	}
+	return eList;
     }
 
     protected boolean isKind(Kind kind) {
