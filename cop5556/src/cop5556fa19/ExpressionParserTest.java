@@ -234,7 +234,7 @@ class ExpressionParserTest {
 
     @Test
     void blockTest1() throws Exception {
-	parseAndShow("function() break break break break end");
+	parseAndShow("function() break return a,b,c end");
     }
 
     @Test
@@ -296,7 +296,7 @@ class ExpressionParserTest {
     // varlist = explist
     @Test
     void blockTest13() throws Exception {
-	parseAndShow("function() a,b,c = true,false x,y = true,false,nil end");
+	parseAndShow("function() a = true end");
     }
 
     // exp = prefixexp
@@ -322,6 +322,6 @@ class ExpressionParserTest {
      */
     @Test
     void blockTest15() throws Exception {
-	parseAndShow("f (a) [b] [g] ()");
+	parseAndShow("f (a) [b] \"g\")");
     }
 }

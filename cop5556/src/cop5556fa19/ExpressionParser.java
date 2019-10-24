@@ -522,7 +522,26 @@ public class ExpressionParser {
     private Block block() throws Exception {
 	Token first = t;
 	List<Stat> stats = getStatsList();
+	Stat ret = retStat();
+	stats.add(ret);
 	return new Block(first, stats);
+    }
+
+    private Stat retStat() throws Exception {
+	Token first = t;
+	RetStat rs = null;
+	List<Exp> el = null;
+	if (isKind(KW_return)) {
+	    match(KW_return);
+	    if (!isKind(KW_end) && !isKind(SEMI)) {
+		el = getExpList();
+	    }
+	    if (isKind(SEMI))
+		match(SEMI);
+	    rs = new RetStat(first, el);
+	}
+
+	return rs;
     }
 
     private List<Stat> getStatsList() throws Exception {
@@ -718,15 +737,6 @@ public class ExpressionParser {
 	    }
 	}
 	return names;
-    }
-
-    public RetStat retStat() throws Exception {
-	match(KW_return);
-	Token first = t;
-	RetStat rs = null;
-	List<Exp> el = getExpList();
-	rs = new RetStat(first, el);
-	return rs;
     }
 
     // var ::= Name | prefixexp ‘[’ exp ‘]’ | prefixexp ‘.’ Name
