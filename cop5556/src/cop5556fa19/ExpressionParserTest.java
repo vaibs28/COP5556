@@ -304,7 +304,7 @@ class ExpressionParserTest {
     // var = Name | prefixexp '[' exp ']' | prefixexp '.' Name
     @Test
     void blockTest14() throws Exception {
-	parseAndShow("a[f](g)");
+	parseAndShow("f(a)[b]");
     }
 
     /*
@@ -323,5 +323,26 @@ class ExpressionParserTest {
     @Test
     void blockTest15() throws Exception {
 	parseAndShow("f (a) [b] \"g\")");
+    }
+
+    @Test
+    void blockTest16() throws Exception {
+	parseAndShow("function() break break return a,b,c,true,false ; end");
+    }
+
+    @Test
+    void blockTest17() throws Exception {
+	parseAndShow("g.a.b = 3");
+	// e=ExpTableLookup [table=ExpName [name=g], key=ExpTableLookup [table=ExpName
+	// [name=a], key=ExpName [name=b]]]
+
+    }
+
+    @Test
+    void blockTest18() throws Exception {
+	parseAndShow("g[\"a\"][\"b\"] = 3");
+	// e=ExpTableLookup [table=ExpTableLookup [table=ExpName [name=g], key=ExpString
+	// [v=a]], key=ExpString [v=b]]
+
     }
 }

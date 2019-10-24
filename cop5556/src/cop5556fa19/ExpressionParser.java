@@ -791,7 +791,7 @@ public class ExpressionParser {
 	tableLookup = new ExpName(first.text);
 	Exp table = new ExpName(first.text);
 	consume(); // consume name
-	while (isKind(LPAREN, LSQUARE, STRINGLIT)) {
+	while (isKind(LPAREN, LSQUARE, STRINGLIT, DOT)) {
 
 	    if (isKind(Kind.LSQUARE)) {
 		consume();
@@ -800,8 +800,9 @@ public class ExpressionParser {
 		tableLookup = new ExpTableLookup(first, tableLookup, key);
 	    } else if (isKind(DOT)) {
 		consume();
-		match(NAME);
-		prefixexpTail();
+		Exp key = new ExpString(t);
+		tableLookup = new ExpTableLookup(first, tableLookup, key);
+		consume();
 	    } else if (isKind(COLON)) {
 		match(NAME);
 		// tableLookup = args();
@@ -828,14 +829,17 @@ public class ExpressionParser {
 	List<Exp> eList = new ArrayList<>();
 	if (isKind(Kind.LPAREN)) {
 	    eList = getExpList();
-	    // e = exp();
-	    // eList.add(e);
+
 	} else if (isKind(LCURLY)) {
 	    e = tableConstructor(first, fieldList());
 	    // match(RCURLY);
 	    eList.add(e);
 	} else if (isKind(STRINGLIT)) {
 	    e = new ExpString(first);
+	    eList.add(e);
+	} else if (isKind(DOT)) {
+	    consume();
+	    e = new ExpString(t);
 	    eList.add(e);
 	}
 	return eList;
