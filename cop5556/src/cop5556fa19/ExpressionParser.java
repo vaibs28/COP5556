@@ -569,6 +569,7 @@ public class ExpressionParser {
 		consume();
 		Block b = block();
 		statList.add(new StatDo(first, b));
+		match(KW_end);
 	    } else if (isKind(KW_while)) {
 		consume();
 		Exp e0 = exp();

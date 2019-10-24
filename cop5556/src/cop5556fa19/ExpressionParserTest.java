@@ -234,7 +234,7 @@ class ExpressionParserTest {
 
     @Test
     void blockTest1() throws Exception {
-	parseAndShow("function() break return a,b,c end");
+	parseAndShow("function() break return a end");
     }
 
     @Test
@@ -244,7 +244,7 @@ class ExpressionParserTest {
 
     @Test
     void blockTest3() throws Exception {
-	parseAndShow("function() do break break break goto x :: abc :: end end");
+	parseAndShow("function() do break break break goto x :: abc :: end return a ; end");
     }
 
     @Test
