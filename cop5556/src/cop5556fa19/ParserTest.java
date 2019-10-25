@@ -504,7 +504,7 @@ class ParserTest {
 
     @Test
     void blockTest17() throws Exception {
-	parseAndShow("v.name(v,args)");
+	parseExpAndShow("v.name(v,args)");
 	// e=ExpFunctionCall [f=ExpTableLookup [table=ExpName [name=v], key=ExpString
 	// [v=name]], args=[ExpName [name=v], ExpName [name=args]]]
     }
@@ -525,10 +525,17 @@ class ParserTest {
     @Test
     void blockTest21() throws Exception {
 	parseAndShow("function a.b.c(self, d, e) return true; end");
-    } 
-    
+    }
+
     @Test
     void blockTest22() throws Exception {
-	parseAndShow("a.b:c(d, e)");
+	parseExpAndShow("v:name(args)");
+	
+	parseExpAndShow("v[\"name\"](v, args)");
+	
+	parseExpAndShow("a.b:c(d, e)");
+	// e=ExpFunctionCall [f=ExpTableLookup [table=ExpName [name=v], key=ExpString
+	// [v=name]], args=[ExpName [name=v], ExpName [name=args]]]
+
     }
 }

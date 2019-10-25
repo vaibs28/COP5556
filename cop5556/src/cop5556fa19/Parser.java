@@ -706,8 +706,8 @@ public class Parser {
 	// consume();
 	Token first = t;
 	List<Exp> expList = new ArrayList<>();
-	if(isKind(LPAREN))
-	    consume();    // working for multipletest , not working for f(a)[b]
+	if (isKind(LPAREN))
+	    consume(); // working for multipletest , not working for f(a)[b]
 	expList.add(exp());
 	while (isKind(COMMA)) {
 	    consume();
@@ -802,7 +802,8 @@ public class Parser {
 	tableLookup = new ExpName(first.text);
 	Exp table = new ExpName(first.text);
 	consume(); // consume name
-	while (isKind(LPAREN, LSQUARE, STRINGLIT, DOT)) {
+	Token prev = null;
+	while (isKind(LPAREN, LSQUARE, STRINGLIT, DOT, COLON)) {
 
 	    if (isKind(Kind.LSQUARE)) {
 		consume();
@@ -815,13 +816,17 @@ public class Parser {
 		tableLookup = new ExpTableLookup(first, tableLookup, key);
 		consume();
 	    } else if (isKind(COLON)) {
-		match(NAME);
-		// tableLookup = args();
+		prev = consume();
+		Exp key = new ExpString(t);
+		tableLookup = new ExpTableLookup(first, tableLookup, key);
+		consume();
 	    } else if (isKind(LPAREN)) {
 		Exp f = tableLookup;
 		args = args();
+		if (prev!=null && prev.kind == COLON) /* for synctactic sugar v:name(args) */
+		    args.add(table);
 		tableLookup = new ExpFunctionCall(first, f, args);
-		consume(); //fix for f(b)[a]
+		consume(); // fix for f(b)[a]
 	    } else if (isKind(STRINGLIT)) {
 		Exp f = tableLookup;
 		args = args();
