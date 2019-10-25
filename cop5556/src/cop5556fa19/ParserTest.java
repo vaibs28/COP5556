@@ -225,40 +225,310 @@ class ParserTest {
     }
 
     @Test
+    void testIdent0() throws Exception {
+	String input = "x";
+	Exp e = parseExpAndShow(input);
+	assertEquals(ExpName.class, e.getClass());
+	assertEquals("x", ((ExpName) e).name);
+    }
+
+    @Test
+    void testIdent1() throws Exception {
+	String input = "(x)";
+	Exp e = parseExpAndShow(input);
+	assertEquals(ExpName.class, e.getClass());
+	assertEquals("x", ((ExpName) e).name);
+    }
+
+    @Test
+    void testString() throws Exception {
+	String input = "\"string\"";
+	Exp e = parseExpAndShow(input);
+	assertEquals(ExpString.class, e.getClass());
+	assertEquals("string", ((ExpString) e).v);
+    }
+
+    @Test
+    void testBoolean0() throws Exception {
+	String input = "true";
+	Exp e = parseExpAndShow(input);
+	assertEquals(ExpTrue.class, e.getClass());
+    }
+
+    @Test
+    void testBoolean1() throws Exception {
+	String input = "false";
+	Exp e = parseExpAndShow(input);
+	assertEquals(ExpFalse.class, e.getClass());
+    }
+
+    @Test
+    void testBinary0() throws Exception {
+	String input = "1 + 2";
+	Exp e = parseExpAndShow(input);
+	Exp expected = Expressions.makeBinary(1, OP_PLUS, 2);
+	show(expected);
+	assertEquals(expected, e);
+    }
+
+    @Test
+    void testUnary0() throws Exception {
+	String input = "-2";
+	Exp e = parseExpAndShow(input);
+	Exp expected = Expressions.makeExpUnary(OP_MINUS, 2);
+	show("expected=" + expected);
+	assertEquals(expected, e);
+    }
+
+    @Test
+    void testUnary1() throws Exception {
+	String input = "-*2\n";
+	assertThrows(SyntaxException.class, () -> {
+	    Exp e = parseExpAndShow(input);
+	});
+    }
+
+    @Test
+    void testRightAssoc() throws Exception {
+	String input = "\"concat\" .. \"is\"..\"right associative\"";
+	Exp e = parseExpAndShow(input);
+	Exp expected = Expressions.makeBinary(Expressions.makeExpString("concat"), DOTDOT,
+		Expressions.makeBinary("is", DOTDOT, "right associative"));
+	show("expected=" + expected);
+	assertEquals(expected, e);
+    }
+
+    @Test
+    void testLeftAssoc() throws Exception {
+	String input = "\"minus\" - \"is\" - \"left associative\"";
+	Exp e = parseExpAndShow(input);
+	Exp expected = Expressions.makeBinary(
+		Expressions.makeBinary(Expressions.makeExpString("minus"), OP_MINUS, Expressions.makeExpString("is")),
+		OP_MINUS, Expressions.makeExpString("left associative"));
+	show("expected=" + expected);
+	assertEquals(expected, e);
+
+    }
+
+    @Test
+    void testPowPrec() throws Exception {
+	String input = "2^3^4";
+	Exp e = parseExpAndShow(input);
+	Exp expected = Expressions.makeBinary(Expressions.makeInt(2), OP_POW, Expressions.makeBinary(3, OP_POW, 4));
+	show("expected=" + expected);
+	assertEquals(expected, e);
+
+    }
+
+    @Test
+    void testFunction() throws Exception {
+	String input = "function(a,b,c) end";
+	Exp e = parseExpAndShow(input);
+
+    }
+
+    @Test
+    void testInvalidFunction() throws Exception {
+	String input = "function(...) end";
+	Exp e = parseExpAndShow(input);
+
+    }
+
+    @Test
+    void testValidFieldList() throws Exception {
+	String input = "{[a]=b}";
+	Exp e = parseExpAndShow(input);
+    }
+
+    @Test
+    void testBinaryExp1() throws Exception {
+	String input = "-2-1";
+	Exp e = parseExpAndShow(input);
+    }
+
+    @Test
+    void testPrefixExp() throws Exception {
+	String input = "{a,b,c}";
+	Exp e = parseExpAndShow(input);
+    }
+
+    @Test
+    void testParenthesesExp() throws Exception {
+
+	parseExpAndShow("#5+4");
+    }
+
+    @Test
+    void failed1() throws Exception {
+
+	parseExpAndShow("function(xy,zy,...) end");
+
+    }
+
+    @Test
+    void failed2() throws Exception {
+
+	parseExpAndShow("{[x + y]= xx * yy,}");
+
+    }
+
+    @Test
+    void failed3() throws Exception {
+	// still failing
+	parseExpAndShow("1 ~ 2 | 3 & 4");
+	// expected - ExpBinary[e0=ExpBinary[e0=ExpInt[v=1],op=BIT_XOR,e1=ExpInt[v=2]],
+	// op = BIT_OR, e1=ExpBin[eo=ExpInt[v=3],op = BIT_AMP, e1=ExpInt[v=4]]
+
+    }
+
+    @Test
+    void failed4() throws Exception {
+
+	parseExpAndShow("function (aa,b) end >> function(test, I, ...) end & function(...) end)");
+
+    }
+
+    @Test
+    void failed5() throws Exception {
+
+	parseExpAndShow("function (aa,b) end >> function(test, I, ...) end ");
+
+    }
+
+    @Test
+    void failed6() throws Exception {
+
+	parseExpAndShow("function (...) end");
+
+    }
+
+    // tests for block
+
+    @Test
+    void blockTest1() throws Exception {
+	parseExpAndShow("function() break return a end");
+    }
+
+    @Test
+    void blockTest2() throws Exception {
+	parseExpAndShow("function() goto abc goto def goto xyz break goto x :: abc :: end");
+    }
+
+    @Test
+    void blockTest3() throws Exception {
+	parseExpAndShow("function() do break break break goto x :: abc :: end return a ; end");
+    }
+
+    @Test
+    void blockTest4() throws Exception {
+	parseExpAndShow("function() while true do break end end");
+    }
+
+    @Test
+    void blockTest5() throws Exception {
+	parseExpAndShow("function() repeat break until true end");
+    }
+
+    @Test
+    void blockTest6() throws Exception {
+	parseExpAndShow(
+		"function() if true then break elseif false then break elseif abc then goto x else break goto a end end");
+    }
+
+    @Test
+    void blockTest7() throws Exception {
+	parseExpAndShow("function() for a = true , false , nil do break end end");
+    }
+
+    @Test
+    void blockTest8() throws Exception {
+	parseExpAndShow("function() for a,b,c in true,false do break end end");
+    }
+
+    @Test
+    void blockTest9() throws Exception {
+	parseExpAndShow("function() function abc.def:xyz (a,b,c) break end end");
+    }
+
+    @Test
+    void blockTest10() throws Exception {
+	parseExpAndShow("function() function abc (a,b,c) break end end");
+    }
+
+    @Test
+    void blockTest11() throws Exception {
+	parseExpAndShow("function() local function abc (a,b,c) break end end");
+    }
+
+    @Test
     void blockTest12() throws Exception {
-	parseAndShow("local function abc (a,b,c) break end end");
+	parseExpAndShow("function() local function abc (a,b,c) break end end");
     }
 
     // varlist = explist
     @Test
     void blockTest13() throws Exception {
-	parseAndShow("a = true end");
+	parseExpAndShow("function() a = true end");
+    }
+
+    // exp = prefixexp
+    // prefixexp = var
+    // var = Name | prefixexp '[' exp ']' | prefixexp '.' Name
+    @Test
+    void blockTest14() throws Exception {
+	parseExpAndShow("f(a)[b]");
+    }
+
+    /*
+     * f(a)[b] is an expression
+     * 
+     * e=ExpTableLookup [table=ExpFunctionCall [f=ExpName [name=f], args=[ExpName
+     * [name=a]]], key=ExpName [name=b]]
+     * 
+     * 
+     * 
+     * f (a) [b] "g" is also an expression e=ExpFunctionCall [f=ExpTableLookup
+     * [table=ExpFunctionCall [f=ExpName [name=f], args=[ExpName [name=a]]],
+     * key=ExpName [name=b]], args=[ExpString [v=g]]]
+     * 
+     */
+    @Test
+    void blockTest15() throws Exception {
+	parseExpAndShow("f (a) [b] \"g\")");
     }
 
     @Test
     void blockTest16() throws Exception {
-	parseAndShow("break break return a,b,c,true,false ; end");
+	parseExpAndShow("function() break break return a,b,c,true,false ; end");
     }
 
     @Test
     void blockTest17() throws Exception {
-	parseExpAndShow("f[a](x)");
-	// e=ExpTableLookup [table=ExpName [name=g], key=ExpTableLookup [table=ExpName
-	// [name=a], key=ExpName [name=b]]]
+	parseAndShow("v.name(v,args)");
+	// e=ExpFunctionCall [f=ExpTableLookup [table=ExpName [name=v], key=ExpString
+	// [v=name]], args=[ExpName [name=v], ExpName [name=args]]]
+    }
 
+    @Test
+    void blockTest20() throws Exception {
+	parseExpAndShow("v:name(args)");
+	// e=ExpFunctionCall [f=ExpTableLookup [table=ExpName [name=v], key=ExpString
+	// [v=name]], args=[ExpName [name=v], ExpName [name=args]]]
     }
 
     @Test
     void blockTest18() throws Exception {
-	parseAndShow("function a.b:c(d, e) return true; end");
-	// e=ExpTableLookup [table=ExpTableLookup [table=ExpName [name=g], key=ExpString
-	// [v=a]], key=ExpString [v=b]]
+	parseExpAndShow("function() x = g.a.b ; ::mylabel:: while true do y = 2 goto mylabel f=a(0,200) end break end");
 
     }
+
+    @Test
+    void blockTest21() throws Exception {
+	parseAndShow("function a.b.c(self, d, e) return true; end");
+    } 
     
     @Test
-    void blockTest15() throws Exception {
-	parseExpAndShow("(a)");
+    void blockTest22() throws Exception {
+	parseAndShow("a.b:c(d, e)");
     }
-
 }

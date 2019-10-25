@@ -702,12 +702,12 @@ public class Parser {
     }
 
     private List<Exp> getExpList() throws Exception {
-	// if (isKind(ASSIGN,COMMA,COLON)) //important
+	// if (isKind(COMMA, COLON, LPAREN)) // important
 	// consume();
 	Token first = t;
 	List<Exp> expList = new ArrayList<>();
 	if(isKind(LPAREN))
-	    consume();
+	    consume();    // working for multipletest , not working for f(a)[b]
 	expList.add(exp());
 	while (isKind(COMMA)) {
 	    consume();
@@ -761,6 +761,7 @@ public class Parser {
 	Exp e = null;
 	if (isKind(NAME)) {
 	    e = prefixexp();
+
 	} else {
 	    prefixexp();
 	    if (isKind(LSQUARE)) {
@@ -820,6 +821,7 @@ public class Parser {
 		Exp f = tableLookup;
 		args = args();
 		tableLookup = new ExpFunctionCall(first, f, args);
+		consume(); //fix for f(b)[a]
 	    } else if (isKind(STRINGLIT)) {
 		Exp f = tableLookup;
 		args = args();
@@ -827,6 +829,7 @@ public class Parser {
 		consume();
 	    } else {
 		tableLookup = new ExpName(first.text);
+		consume();
 
 	    }
 	}
