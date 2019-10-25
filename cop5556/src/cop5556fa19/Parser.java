@@ -19,6 +19,7 @@ import java.util.List;
 
 import cop5556fa19.AST.ASTVisitor;
 import cop5556fa19.AST.Block;
+import cop5556fa19.AST.Chunk;
 import cop5556fa19.AST.Exp;
 import cop5556fa19.AST.ExpBinary;
 import cop5556fa19.AST.ExpFalse;
@@ -358,7 +359,6 @@ public class Parser {
 	case NAME:
 	    // e0 = new ExpName(first.text); replacing with prefixexp for assgn 3
 	    e0 = prefixexp();
-	    // consume();
 	    break;
 
 	case LPAREN:
@@ -455,7 +455,7 @@ public class Parser {
 	Token first = t;
 	FuncBody fnBody = null;
 	ParList pList = null;
-	if (!isKind(LPAREN))
+	if (!isKind(LPAREN)) // removed commented code
 	    consume();
 	match(LPAREN);
 	pList = parList();
@@ -522,8 +522,10 @@ public class Parser {
     private Block block() throws Exception {
 	Token first = t;
 	List<Stat> stats = getStatsList();
+	// consume(); //test
 	Stat ret = retStat();
-	stats.add(ret);
+	if (ret != null)
+	    stats.add(ret);
 	return new Block(first, stats);
     }
 
@@ -569,6 +571,8 @@ public class Parser {
 		consume();
 		Block b = block();
 		statList.add(new StatDo(first, b));
+		if (isKind(RPAREN)) // fix for multi
+		    consume();
 		match(KW_end);
 	    } else if (isKind(KW_while)) {
 		consume();
@@ -577,6 +581,8 @@ public class Parser {
 		Block b = block();
 		StatWhile sw = new StatWhile(first, e0, b);
 		statList.add(sw);
+		if (isKind(RPAREN)) // fix for multi
+		    consume();
 		match(KW_end);
 	    } else if (isKind(KW_repeat)) {
 		consume();
@@ -662,6 +668,7 @@ public class Parser {
 	    } else if (isKind(NAME)) {
 		// varlist = explist
 		List<Exp> varList = getVarList();
+		match(ASSIGN);
 		List<Exp> expList = getExpList();
 		StatAssign sa = new StatAssign(first, varList, expList);
 		statList.add(sa);
@@ -695,9 +702,12 @@ public class Parser {
     }
 
     private List<Exp> getExpList() throws Exception {
-	if (isKind(ASSIGN))
-	    consume();
+	// if (isKind(ASSIGN,COMMA,COLON)) //important
+	// consume();
+	Token first = t;
 	List<Exp> expList = new ArrayList<>();
+	if(isKind(LPAREN))
+	    consume();
 	expList.add(exp());
 	while (isKind(COMMA)) {
 	    consume();
@@ -817,6 +827,7 @@ public class Parser {
 		consume();
 	    } else {
 		tableLookup = new ExpName(first.text);
+
 	    }
 	}
 	return tableLookup;
@@ -911,6 +922,12 @@ public class Parser {
     void error(Token t, String m) throws SyntaxException {
 	String message = m + " at " + t.line + ":" + t.pos;
 	throw new SyntaxException(t, message);
+    }
+
+    public Chunk parse() throws Exception {
+	Token first = t;
+	Block b = block();
+	return new Chunk(first, b);
     }
 
 }
