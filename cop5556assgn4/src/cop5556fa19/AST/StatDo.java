@@ -1,30 +1,26 @@
 package cop5556fa19.AST;
 
-import java.util.List;
-
 import cop5556fa19.Token;
 
-public class Block extends Stat {
+public class StatDo extends Stat {
 
-	public final List<Stat> stats;
+	public final Block b;
 
-	public Block(Token firstToken, List<Stat> stats) {
+	public StatDo(Token firstToken, Block b) {
 		super(firstToken);
-		this.stats = stats;
+		this.b = b;
 	}
 
 	@Override
 	public String toString() {
-		return "Block [stats=" + stats +  "]";
+		return "StatDo [b=" + b + "]";
 	}
-	
-	
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((stats == null) ? 0 : stats.hashCode());
+		result = prime * result + ((b == null) ? 0 : b.hashCode());
 		return result;
 	}
 
@@ -36,18 +32,18 @@ public class Block extends Stat {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Block other = (Block) obj;
-		if (stats == null) {
-			if (other.stats != null)
+		StatDo other = (StatDo) obj;
+		if (b == null) {
+			if (other.b != null)
 				return false;
-		} else if (!stats.equals(other.stats))
+		} else if (!b.equals(other.b))
 			return false;
 		return true;
 	}
 
 	@Override
 	public Object visit(ASTVisitor v, Object arg) throws Exception {
-		return v.visitBlock(this, arg);
+		return v.visitStatDo(this, arg);
 	}
 
 }

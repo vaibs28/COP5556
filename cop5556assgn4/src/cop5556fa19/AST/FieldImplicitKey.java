@@ -1,30 +1,26 @@
 package cop5556fa19.AST;
 
-import java.util.List;
-
 import cop5556fa19.Token;
 
-public class Block extends Stat {
+public class FieldImplicitKey extends Field {
 
-	public final List<Stat> stats;
+	public final Exp exp;
 
-	public Block(Token firstToken, List<Stat> stats) {
+	public FieldImplicitKey(Token firstToken, Exp exp) {
 		super(firstToken);
-		this.stats = stats;
+		this.exp = exp;
 	}
 
 	@Override
 	public String toString() {
-		return "Block [stats=" + stats +  "]";
+		return "FieldImplicitKey [exp=" + exp  + "]";
 	}
-	
-	
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((stats == null) ? 0 : stats.hashCode());
+		result = prime * result + ((exp == null) ? 0 : exp.hashCode());
 		return result;
 	}
 
@@ -36,18 +32,18 @@ public class Block extends Stat {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Block other = (Block) obj;
-		if (stats == null) {
-			if (other.stats != null)
+		FieldImplicitKey other = (FieldImplicitKey) obj;
+		if (exp == null) {
+			if (other.exp != null)
 				return false;
-		} else if (!stats.equals(other.stats))
+		} else if (!exp.equals(other.exp))
 			return false;
 		return true;
 	}
 
 	@Override
 	public Object visit(ASTVisitor v, Object arg) throws Exception {
-		return v.visitBlock(this, arg);
+		return v.visitFieldImplicitKey(this, arg);
 	}
 
 }
