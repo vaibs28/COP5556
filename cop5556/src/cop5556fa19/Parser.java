@@ -86,7 +86,7 @@ public class Parser {
     List<Token.Kind> unaryOp = new ArrayList<>();
     Kind powOp = OP_POW;
 
-    Parser(Scanner s) throws Exception {
+    public Parser(Scanner s) throws Exception {
 	this.scanner = s;
 	t = scanner.getNext(); // establish invariant
 	initList();
@@ -469,10 +469,9 @@ public class Parser {
 	Token first = t;
 	ParList pList = null;
 	List<Name> nList = null;
-	boolean hasVarArgs = true;
+	boolean hasVarArgs = false;
 
 	if (t.kind == Kind.RPAREN) {
-	    hasVarArgs = false;
 	    pList = new ParList(t, nList, hasVarArgs);
 	} else {
 	    while (t.kind != RPAREN) {
@@ -481,8 +480,11 @@ public class Parser {
 		    nList = nameList();
 		    pList = new ParList(t, nList, hasVarArgs);
 		} else if (t.kind == Kind.DOTDOTDOT) {
+		    hasVarArgs = true;
 		    pList = new ParList(t, nList, hasVarArgs);
 		    consume();
+		}else {
+		    throw new SyntaxException(first, "invalid token");
 		}
 	    }
 	}
@@ -750,13 +752,6 @@ public class Parser {
 	return names;
     }
 
-    // var ::= Name | prefixexp ‘[’ exp ‘]’ | prefixexp ‘.’ Name
-    // functioncall ::= prefixexp args | prefixexp ‘:’ Name args
-    // prefixexp ::= Name prefixexpTail | (exp) prefixexpTail
-    // prefixexpTail::= '['exp']'prefixexpTail | '.'prefixexpTail |
-    // args prefixexpTail| ':' Name args
-    // args ::= `(´ [explist] `)´ | tableconstructor | String
-
     public Exp var() throws Exception {
 	Exp e = null;
 	if (isKind(NAME)) {
@@ -776,8 +771,6 @@ public class Parser {
 	return e;
     }
 
-    // prefixexpTail::= '['exp']'prefixexpTail | '.'prefixexpTail | args
-    // prefixexpTail| ':' Name args
     public Exp prefixexp() throws Exception {
 	Exp e = null;
 	Token first = t;
@@ -792,8 +785,6 @@ public class Parser {
 	return e;
     }
 
-    // prefixexpTail::= '['exp']'prefixexpTail | '.'prefixexpTail |
-    // args prefixexpTail| ':' Name args
     public Exp prefixexpTail() throws Exception {
 	Token first = t;
 	// ExpFunctionCall fnCall = null;
@@ -841,7 +832,6 @@ public class Parser {
 	return tableLookup;
     }
 
-    // args ::= `(´ [explist] `)´ | tableconstructor | String
     public List<Exp> args() throws Exception {
 	Token first = t;
 	Exp e = null;
@@ -932,10 +922,17 @@ public class Parser {
 	throw new SyntaxException(t, message);
     }
 
-    public Chunk parse() throws Exception {
+    public Chunk chunk() throws Exception {
 	Token first = t;
 	Block b = block();
 	return new Chunk(first, b);
     }
+    
+    public Chunk parse() throws Exception {
+	Chunk chunk = chunk();
+	if (!isKind(EOF)) 
+	    throw new SyntaxException(t, "Parse ended before end of input");
+	return chunk;
+	}
 
 }
