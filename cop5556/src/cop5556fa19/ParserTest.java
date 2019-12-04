@@ -1,6 +1,5 @@
 package cop5556fa19;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.Reader;
@@ -17,31 +16,18 @@ import cop5556fa19.AST.ASTNode;
 import cop5556fa19.AST.Block;
 import cop5556fa19.AST.Chunk;
 import cop5556fa19.AST.Exp;
-import cop5556fa19.AST.ExpBinary;
 import cop5556fa19.AST.ExpFalse;
-import cop5556fa19.AST.ExpFunction;
 import cop5556fa19.AST.ExpFunctionCall;
-import cop5556fa19.AST.ExpInt;
 import cop5556fa19.AST.ExpName;
-import cop5556fa19.AST.ExpNil;
 import cop5556fa19.AST.ExpString;
-import cop5556fa19.AST.ExpTable;
 import cop5556fa19.AST.ExpTrue;
-import cop5556fa19.AST.ExpVarArgs;
 import cop5556fa19.AST.Expressions;
-import cop5556fa19.AST.Field;
-import cop5556fa19.AST.FieldExpKey;
-import cop5556fa19.AST.FieldImplicitKey;
-import cop5556fa19.AST.ParList;
 import cop5556fa19.AST.Stat;
 import cop5556fa19.AST.StatAssign;
 import cop5556fa19.AST.StatBreak;
 import cop5556fa19.AST.StatDo;
-import cop5556fa19.AST.StatGoto;
 import cop5556fa19.AST.StatLabel;
 import cop5556fa19.Scanner;
-import cop5556fa19.Token;
-
 import static cop5556fa19.Token.Kind.*;
 
 class ParserTest {
@@ -171,7 +157,6 @@ class ParserTest {
 	Exp v = Expressions.makeExpTableLookup(gtable, b);
 	Exp three = Expressions.makeExpInt(3);
 	Stat s = Expressions.makeStatAssign(Expressions.makeExpList(v), Expressions.makeExpList(three));
-	;
 	Block expected = Expressions.makeBlock(s);
 	assertEquals(expected, bl);
     }
@@ -374,11 +359,9 @@ class ParserTest {
 
     @Test
     void failed3() throws Exception {
-	// still failing
+	
 	parseExpAndShow("1 ~ 2 | 3 & 4");
-	// expected - ExpBinary[e0=ExpBinary[e0=ExpInt[v=1],op=BIT_XOR,e1=ExpInt[v=2]],
-	// op = BIT_OR, e1=ExpBin[eo=ExpInt[v=3],op = BIT_AMP, e1=ExpInt[v=4]]
-
+	
     }
 
     @Test
@@ -471,27 +454,12 @@ class ParserTest {
 	parseExpAndShow("function() a = true end");
     }
 
-    // exp = prefixexp
-    // prefixexp = var
-    // var = Name | prefixexp '[' exp ']' | prefixexp '.' Name
     @Test
     void blockTest14() throws Exception {
 	parseExpAndShow("f(a)[b]");
     }
 
-    /*
-     * f(a)[b] is an expression
-     * 
-     * e=ExpTableLookup [table=ExpFunctionCall [f=ExpName [name=f], args=[ExpName
-     * [name=a]]], key=ExpName [name=b]]
-     * 
-     * 
-     * 
-     * f (a) [b] "g" is also an expression e=ExpFunctionCall [f=ExpTableLookup
-     * [table=ExpFunctionCall [f=ExpName [name=f], args=[ExpName [name=a]]],
-     * key=ExpName [name=b]], args=[ExpString [v=g]]]
-     * 
-     */
+  
     @Test
     void blockTest15() throws Exception {
 	parseExpAndShow("f (a) [b] \"g\")");
@@ -505,15 +473,13 @@ class ParserTest {
     @Test
     void blockTest17() throws Exception {
 	parseExpAndShow("v.name(v,args)");
-	// e=ExpFunctionCall [f=ExpTableLookup [table=ExpName [name=v], key=ExpString
-	// [v=name]], args=[ExpName [name=v], ExpName [name=args]]]
+	
     }
 
     @Test
     void blockTest20() throws Exception {
 	parseExpAndShow("v:name(args)");
-	// e=ExpFunctionCall [f=ExpTableLookup [table=ExpName [name=v], key=ExpString
-	// [v=name]], args=[ExpName [name=v], ExpName [name=args]]]
+	
     }
 
     @Test
@@ -524,7 +490,7 @@ class ParserTest {
 
     @Test
     void blockTest21() throws Exception {
-	parseAndShow("function a.b.c(self, d, e) return true; end");
+	parseAndShow("function a.b.c(self, d, e) return true; ");
     }
 
     @Test
@@ -534,8 +500,38 @@ class ParserTest {
 	parseExpAndShow("v[\"name\"](v, args)");
 	
 	parseExpAndShow("a.b:c(d, e)");
-	// e=ExpFunctionCall [f=ExpTableLookup [table=ExpName [name=v], key=ExpString
-	// [v=name]], args=[ExpName [name=v], ExpName [name=args]]]
-
+	
+    }
+    
+    
+    
+    @Test
+    void failed7() throws Exception {
+	parseExpAndShow("function (aa, b) end >> function(test, l, ...) end & function(...) end");
+    }
+    
+    @Test
+    void failed8() throws Exception {
+	parseExpAndShow("function (aa, b) end >> function(test, l, ...) end");
+    }
+    
+    @Test
+    void failed9() throws Exception {
+	parseAndShow("1 ~ 2 | 3 & 4");
+    }
+    
+    @Test
+    void failed10() throws Exception {
+	parseBlockAndShow("a,c=8,f()");
+    }
+    
+    @Test
+    void failed11() throws Exception {
+	parseExpAndShow("function (aa, b) end >> function(test, l, ...) end");
+    }
+    
+    @Test
+    void failed12() throws Exception {
+	parseExpAndShow("function (x,y,...) end");
     }
 }
