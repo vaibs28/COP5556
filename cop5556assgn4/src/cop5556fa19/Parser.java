@@ -469,9 +469,10 @@ public class Parser {
 	Token first = t;
 	ParList pList = null;
 	List<Name> nList = null;
-	boolean hasVarArgs = false;
+	boolean hasVarArgs = true;
 
 	if (t.kind == Kind.RPAREN) {
+	    hasVarArgs = false;
 	    pList = new ParList(t, nList, hasVarArgs);
 	} else {
 	    while (t.kind != RPAREN) {
@@ -480,11 +481,8 @@ public class Parser {
 		    nList = nameList();
 		    pList = new ParList(t, nList, hasVarArgs);
 		} else if (t.kind == Kind.DOTDOTDOT) {
-		    hasVarArgs = true;
 		    pList = new ParList(t, nList, hasVarArgs);
 		    consume();
-		}else {
-		    throw new SyntaxException(first, "invalid token");
 		}
 	    }
 	}
@@ -721,7 +719,7 @@ public class Parser {
     public StatLabel label() {
 	Token first = t;
 	Name label = new Name(t, t.text);
-	StatLabel sl = new StatLabel(first, label);
+	StatLabel sl = new StatLabel(first, label, new Block(first, null) ,1);
 	return sl;
 
     }

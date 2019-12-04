@@ -312,17 +312,17 @@ public class Scanner {
 				    if (ch == 'a') {
 					sb.append((char) 7);
 				    } else if (ch == 'b') {
-					sb.append((char) 10);
+					sb.append((char) 8);
 				    } else if (ch == 'f') {
-					sb.append((char) 14);
-				    } else if (ch == 'v') {
-					sb.append((char) 13);
-				    } else if (ch == 'n') {
 					sb.append((char) 12);
-				    } else if (ch == 't') {
+				    } else if (ch == 'v') {
 					sb.append((char) 11);
+				    } else if (ch == 'n') {
+					sb.append((char) 10);
+				    } else if (ch == 't') {
+					sb.append((char) 9);
 				    } else if (ch == 'r') {
-					sb.append((char) 15);
+					sb.append((char) 13);
 				    } else if (ch == '\\') {
 					sb.append((char) ch);
 				    } else if (ch == '\'') {
@@ -472,16 +472,17 @@ public class Scanner {
 			    state = State.START;
 			    break;
 			}
-		    } else if (ch == '\r' || ch==-1) {
+		    } else if (ch == '\r') {
 			state = State.START;
 			break;
-		    } else  {
+		    } else if (ch == -1) {
 			throw new LexicalException("No comment terminator found");
 		    }
 		} else {
 		    skippedChar = ch;
 		    return new Token(Kind.OP_MINUS, "-", pos, line);
 		}
+		break;
 	    }
 
 	}

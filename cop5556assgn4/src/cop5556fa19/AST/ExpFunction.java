@@ -2,42 +2,34 @@ package cop5556fa19.AST;
 
 import cop5556fa19.Token;
 
-public class Chunk extends ASTNode {
+public class ExpFunction extends Exp {
 	
-	
-	public final Block block;
-	int numLocals;
-	
-	public int getNumLocals() {
-		return numLocals;
-	}
+	public final FuncBody body;
 
 
-	public void setNumLocals(int numLocals) {
-		this.numLocals = numLocals;
-	}
 
-
-	public Chunk(Token firstToken, Block b) {
+	public ExpFunction(Token firstToken, FuncBody body) {
 		super(firstToken);
-		this.block = b;
+		this.body = body;
 	}
 
-	
+
+
 	@Override
 	public String toString() {
-		return "Chunk [block=" + block +  "]";
+		return "FuncDec [body=" + body + ", firstToken=" + firstToken + "]";
 	}
 
-	
+
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((block == null) ? 0 : block.hashCode());
+		result = prime * result + ((body == null) ? 0 : body.hashCode());
 		return result;
 	}
+
 
 
 	@Override
@@ -48,19 +40,20 @@ public class Chunk extends ASTNode {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Chunk other = (Chunk) obj;
-		if (block == null) {
-			if (other.block != null)
+		ExpFunction other = (ExpFunction) obj;
+		if (body == null) {
+			if (other.body != null)
 				return false;
-		} else if (!block.equals(other.block))
+		} else if (!body.equals(other.body))
 			return false;
 		return true;
 	}
 
 
+
 	@Override
 	public Object visit(ASTVisitor v, Object arg) throws Exception {
-		return v.visitChunk(this,arg);
+		return v.visitFunDef(this,arg);
 	}
 
 }
