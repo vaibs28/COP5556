@@ -3,8 +3,6 @@ package interpreter;
 import java.io.Reader;
 
 import java.util.List;
-
-import cop5556fa19.BuildSymbolTable;
 import cop5556fa19.Parser;
 import cop5556fa19.Scanner;
 import cop5556fa19.AST.*;
@@ -49,8 +47,8 @@ public class Interpreter extends ASTVisitorAdapter{
 		Chunk chunk = parser.parse();
 		root = chunk;
 		//Perform static analysis to prepare for goto.  Uncomment after u
-//		StaticAnalysis hg = new StaticAnalysis();
-//		chunk.visit(hg,null);	
+		StaticAnalysis hg = new StaticAnalysis();
+		chunk.visit(hg,null);	
 		//Interpret the program and return values returned from chunk.visit
 		List<LuaValue> vals = (List<LuaValue>) chunk.visit(this,_G);
 		return vals;
