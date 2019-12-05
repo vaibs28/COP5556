@@ -279,7 +279,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitStatBreak(StatBreak statBreak, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	return null;
     }
 
     @Override
@@ -301,8 +301,8 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	Object visitedStatWhile = null;
 
 	while (true) {
-	    Object condition = statWhile.e.visit(this, arg);
-	    if (condition != null)
+	    Object visited = statWhile.e.visit(this, arg);
+	    if (visited != null)
 		break;
 	    try {
 		visitedStatWhile = statWhile.b.visit(this, arg);
@@ -496,7 +496,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitLabel(StatLabel statLabel, Object ar) {
-	throw new UnsupportedOperationException();
+	return null;
     }
 
     @Override
