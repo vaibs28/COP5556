@@ -25,6 +25,7 @@ import cop5556fa19.AST.ExpTableLookup;
 import cop5556fa19.AST.ExpTrue;
 import cop5556fa19.AST.ExpUnary;
 import cop5556fa19.AST.ExpVarArgs;
+import cop5556fa19.AST.Field;
 import cop5556fa19.AST.FieldExpKey;
 import cop5556fa19.AST.FieldImplicitKey;
 import cop5556fa19.AST.FieldList;
@@ -48,11 +49,10 @@ import cop5556fa19.AST.StatLocalAssign;
 import cop5556fa19.AST.StatLocalFunc;
 import cop5556fa19.AST.StatRepeat;
 import cop5556fa19.AST.StatWhile;
-import interpreter.ASTVisitorAdapter.TypeException;
 
 public abstract class ASTVisitorAdapter implements ASTVisitor {
 
-    Stack stack = new Stack();
+    Stack<String> stack = new Stack<String>();
     int count = 0;
 
     @SuppressWarnings("serial")
@@ -183,7 +183,22 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitUnExp(ExpUnary unExp, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	Object visited = unExp.e.visit(this, arg);
+	if (unExp.op == Kind.OP_MINUS) {
+	    return new LuaInt(-1 * toInteger(visited));
+	} else if (unExp.op == Kind.KW_not) {
+	    return new LuaBoolean(!toBoolean(visited));
+	} else if (unExp.op == Kind.BIT_XOR) {
+	    return new LuaInt(~toInteger(visited));
+	} else if (unExp.op == Kind.OP_HASH) {
+	    if (visited instanceof LuaString)
+		return new LuaInt(((LuaString) visited).value.length());
+	    if (visited instanceof LuaTable)
+		return new LuaInt(0);
+	    throw new TypeException("Invalid type");
+	} else {
+	    throw new IllegalArgumentException("Invalid unary operator " + unExp.op);
+	}
     }
 
     @Override
@@ -193,12 +208,21 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitExpString(ExpString expString, Object arg) {
-	throw new UnsupportedOperationException();
+	return new LuaString(expString.v);
     }
 
     @Override
     public Object visitExpTable(ExpTable expTableConstr, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	LuaTable table = new LuaTable();
+	for (Field f : expTableConstr.fields) {
+	    Object visited = f.visit(this, arg);
+	    if (visited instanceof TableKV) {
+		table.put((LuaValue) ((TableKV) visited).getKey(), (LuaValue) ((TableKV) visited).getValue());
+	    } else {
+		table.putImplicit((LuaValue) visited);
+	    }
+	}
+	return table;
     }
 
     @Override
@@ -218,7 +242,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitName(Name name, Object arg) {
-	throw new UnsupportedOperationException();
+	return new LuaString(name.name);
     }
 
     // visit block within chunk by visiting List<Stat>
@@ -228,15 +252,23 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	Object visitedStat = null;
 	// visit all the statements
 	for (int i = 0; i < statCount; i++) {
-	    Stat st = block.stats.get(i);
-	    visitedStat = st.visit(this, arg);
+	    try {
+		Stat st = block.stats.get(i);
+		visitedStat = st.visit(this, arg);
+		if (visitedStat != null)
+		    return visitedStat;
+	    } catch (GotoException e) {
+		if (e.statLabel.enclosingBlock == block)
+		    i = e.statLabel.index;
+		else
+		    throw e;
+	    }
 	}
 	return visitedStat;
     }
 
     @Override
     public Object visitStatBreak(StatBreak statBreak, Object arg, Object arg2) {
-	// throw exception
 	throw new UnsupportedOperationException();
     }
 
@@ -252,8 +284,11 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitStatDo(StatDo statDo, Object arg) throws Exception {
-	Object visitedStatDo = statDo.b.visit(this, arg);
-	return visitedStatDo;
+	try {
+	    return statDo.b.visit(this, arg);
+	} catch (Exception e) {
+	    throw e;
+	}
     }
 
     @Override
@@ -282,12 +317,17 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	throw new UnsupportedOperationException();
     }
 
+    private boolean asBoolean(Object visit) {
+	return visit instanceof LuaBoolean ? ((LuaBoolean) visit).value : !(visit instanceof LuaNil);
+    }
+
     @Override
     public Object visitStatIf(StatIf statIf, Object arg) throws Exception {
 	for (int i = 0; i < statIf.es.size(); i++) {
+	    stack.push("value");
 	    Object visit = statIf.es.get(i).visit(this, arg);
-
-	    if (visit != null) {
+	    stack.pop();
+	    if (asBoolean(visit)) {
 		Object visit1 = statIf.bs.get(i).visit(this, arg);
 		if (visit1 != null)
 		    return visit1;
@@ -330,9 +370,11 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
     @Override
     public Object visitRetStat(RetStat retStat, Object arg) throws Exception {
 	List<Object> list = new ArrayList<>();
-	for(Exp e:retStat.el) {
+	for (Exp e : retStat.el) {
+	    stack.push("value");
 	    Object obj = e.visit(this, arg);
 	    list.add(obj);
+	    stack.pop();
 	}
 	return list;
     }
@@ -340,33 +382,40 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
     // visit chunk
     @Override
     public Object visitChunk(Chunk chunk, Object arg) throws Exception {
+	stack.push("exp");
 	Object visitedChunk = chunk.block.visit(this, arg);
+	stack.pop();
 	return visitedChunk;
     }
 
     @Override
     public Object visitFieldExpKey(FieldExpKey fieldExpKey, Object object) throws Exception {
-	throw new UnsupportedOperationException();
+	Object key = fieldExpKey.key.visit(this, object);
+	Object value = fieldExpKey.value.visit(this, object);
+	return new TableKV(key, value);
     }
 
     @Override
     public Object visitFieldNameKey(FieldNameKey fieldNameKey, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+
+	Object key = fieldNameKey.name.visit(this, arg);
+	Object value = fieldNameKey.exp.visit(this, arg);
+	return new TableKV(key, value);
     }
 
     @Override
     public Object visitFieldImplicitKey(FieldImplicitKey fieldImplicitKey, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	return fieldImplicitKey.exp.visit(this, arg);
     }
 
     @Override
     public Object visitExpTrue(ExpTrue expTrue, Object arg) {
-	throw new UnsupportedOperationException();
+	return new LuaBoolean(true);
     }
 
     @Override
     public Object visitExpFalse(ExpFalse expFalse, Object arg) {
-	throw new UnsupportedOperationException();
+	return new LuaBoolean(false);
     }
 
     @Override
@@ -381,17 +430,55 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitStatAssign(StatAssign statAssign, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	LuaTable table = (LuaTable) arg;
+
+	for (int i = 0; i < statAssign.varList.size(); i++) {
+	    Exp var = statAssign.varList.get(i);
+	    Exp exp = null;
+	    if (i >= statAssign.expList.size())
+		exp = ExpNil.expNilConst;
+	    else
+		exp = statAssign.expList.get(i);
+
+	    if (var instanceof ExpTableLookup) {
+		stack.push("value");
+		ExpTableLookup expTableLookup = (ExpTableLookup) var;
+		LuaTable internalTable = (LuaTable) expTableLookup.table.visit(this, arg);
+		Object key = expTableLookup.key.visit(this, arg);
+		Object value = exp.visit(this, arg);
+		stack.pop();
+		internalTable.put((LuaValue) key, (LuaValue) value);
+	    } else {
+		Object key = var.visit(this, arg);
+		Object value = exp.visit(this, arg);
+		table.put((LuaValue) key, (LuaValue) value);
+	    }
+	}
+	return null;
     }
 
     @Override
     public Object visitExpTableLookup(ExpTableLookup expTableLookup, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+
+	Object expTable = expTableLookup.table.visit(this, arg);
+	Object key = expTableLookup.key.visit(this, arg);
+
+	if (!(expTable instanceof LuaTable))
+	    throw new TypeException("");
+	return ((LuaTable) expTable).get((LuaValue) key);
     }
 
     @Override
     public Object visitExpFunctionCall(ExpFunctionCall expFunctionCall, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	LuaTable table = (LuaTable) arg;
+	Object functionName = expFunctionCall.f.visit(this, arg);
+	List<LuaValue> args = new ArrayList<>();
+	for (Exp v : expFunctionCall.args) {
+	    args.add((LuaValue) v.visit(this, arg));
+	}
+
+	((JavaFunction) table.get((LuaString) functionName)).call(args);
+	return null;
     }
 
     @Override
@@ -406,7 +493,9 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitExpName(ExpName expName, Object arg) {
-	throw new UnsupportedOperationException();
+	LuaTable table = (LuaTable) arg;
+	LuaString l = new LuaString(expName.name);
+	return stack.peek().equals("value") ? table.get(l) : l;
     }
 
     public int toInteger(Object v) throws TypeException {
@@ -427,4 +516,71 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	}
     }
 
+}
+
+class TableKV {
+    Object key;
+    Object value;
+
+    public TableKV(Object key, Object value) {
+	super();
+	this.key = key;
+	this.value = value;
+    }
+
+    public Object getKey() {
+	return key;
+    }
+
+    public void setKey(Object key) {
+	this.key = key;
+    }
+
+    public Object getValue() {
+	return value;
+    }
+
+    public void setValue(Object value) {
+	this.value = value;
+    }
+
+    @Override
+    public int hashCode() {
+	final int prime = 31;
+	int result = 1;
+	result = prime * result + ((key == null) ? 0 : key.hashCode());
+	result = prime * result + ((value == null) ? 0 : value.hashCode());
+	return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+	if (this == obj)
+	    return true;
+	if (obj == null)
+	    return false;
+	if (getClass() != obj.getClass())
+	    return false;
+	TableKV other = (TableKV) obj;
+	if (key == null) {
+	    if (other.key != null)
+		return false;
+	} else if (!key.equals(other.key))
+	    return false;
+	if (value == null) {
+	    if (other.value != null)
+		return false;
+	} else if (!value.equals(other.value))
+	    return false;
+	return true;
+    }
+
+}
+
+class GotoException extends Exception {
+    final StatLabel statLabel;
+
+    private GotoException(StatLabel statLabel) {
+	this.statLabel = statLabel;
+    }
 }
