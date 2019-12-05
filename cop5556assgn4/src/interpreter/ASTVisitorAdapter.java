@@ -1,12 +1,16 @@
 package interpreter;
 
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import cop5556fa19.Token;
+import cop5556fa19.Token.Kind;
 import cop5556fa19.AST.ASTVisitor;
 import cop5556fa19.AST.Block;
 import cop5556fa19.AST.Chunk;
+import cop5556fa19.AST.Exp;
 import cop5556fa19.AST.ExpBinary;
 import cop5556fa19.AST.ExpFalse;
 import cop5556fa19.AST.ExpFunction;
@@ -44,8 +48,12 @@ import cop5556fa19.AST.StatLocalAssign;
 import cop5556fa19.AST.StatLocalFunc;
 import cop5556fa19.AST.StatRepeat;
 import cop5556fa19.AST.StatWhile;
+import interpreter.ASTVisitorAdapter.TypeException;
 
 public abstract class ASTVisitorAdapter implements ASTVisitor {
+
+    Stack stack = new Stack();
+    int count = 0;
 
     @SuppressWarnings("serial")
     public static class StaticSemanticException extends Exception {
@@ -72,12 +80,105 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitExpNil(ExpNil expNil, Object arg) {
-	throw new UnsupportedOperationException();
+	return LuaNil.nil;
     }
 
     @Override
     public Object visitExpBin(ExpBinary expBin, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+
+	Object exp0 = expBin.e0.visit(this, arg);
+	Object exp1 = expBin.e1.visit(this, arg);
+
+	if (expBin.op == Kind.OP_PLUS) {
+	    return new LuaInt(toInteger(exp0) + toInteger(exp1));
+	} else if (expBin.op == Kind.OP_MINUS) {
+	    return new LuaInt(toInteger(exp0) - toInteger(exp1));
+	} else if (expBin.op == Kind.OP_TIMES) {
+	    return new LuaInt(toInteger(exp0) * toInteger(exp1));
+	} else if (expBin.op == Kind.OP_DIV) {
+	    return new LuaInt(toInteger(exp0) / toInteger(exp1));
+	} else if (expBin.op == Kind.OP_MOD) {
+	    return new LuaInt(toInteger(exp0) % toInteger(exp1));
+	} else if (expBin.op == Kind.OP_POW) {
+	    return new LuaInt((int) Math.pow(toInteger(exp0), toInteger(exp1)));
+	} else if (expBin.op == Kind.OP_DIVDIV) {
+	    return new LuaInt(Math.floorDiv(toInteger(exp0), toInteger(exp1)));
+	} else if (expBin.op == Kind.REL_EQEQ) {
+	    return new LuaBoolean(exp0.equals(exp1));
+	} else if (expBin.op == Kind.REL_NOTEQ) {
+	    return new LuaBoolean(!exp0.equals(exp1));
+	} else if (expBin.op == Kind.BIT_OR) {
+	    return new LuaInt(toInteger(exp0) | toInteger(exp1));
+	} else if (expBin.op == Kind.BIT_AMP) {
+	    return new LuaInt(toInteger(exp0) & toInteger(exp1));
+	} else if (expBin.op == Kind.BIT_XOR) {
+	    return new LuaInt(toInteger(exp0) ^ toInteger(exp1));
+	} else if (expBin.op == Kind.BIT_SHIFTL) {
+	    return new LuaInt(toInteger(exp0) << toInteger(exp1));
+	} else if (expBin.op == Kind.BIT_SHIFTR) {
+	    return new LuaInt(toInteger(exp0) >> toInteger(exp1));
+	} else if (expBin.op == Kind.KW_and) {
+	    return new LuaBoolean(toBoolean(exp0) && toBoolean(exp1));
+	} else if (expBin.op == Kind.KW_or) {
+	    return new LuaBoolean(toBoolean(exp0) || toBoolean(exp1));
+	} else if (expBin.op == Kind.REL_EQEQ) {
+	    return new LuaBoolean(toBoolean(exp0) == toBoolean(exp1));
+	} else if (expBin.op == Kind.REL_NOTEQ) {
+	    return new LuaBoolean(toBoolean(exp0) != toBoolean(exp1));
+	} else if (expBin.op == Kind.REL_GE) {
+	    if (areIntegers(exp0, exp1)) {
+		return new LuaBoolean(toInteger(exp0) >= toInteger(exp1));
+	    } else if (areStrings(exp0, exp1)) {
+		return new LuaBoolean(exp0.toString().compareTo(exp1.toString()) >= 0 ? true : false);
+	    } else {
+		throw new TypeException("Invald type");
+	    }
+
+	} else if (expBin.op == Kind.REL_GT) {
+	    if (areIntegers(exp0, exp1)) {
+		return new LuaBoolean(toInteger(exp0) > toInteger(exp1));
+	    } else if (areStrings(exp0, exp1)) {
+		return new LuaBoolean(exp0.toString().compareTo(exp1.toString()) > 0 ? true : false);
+	    } else {
+		throw new TypeException("Invald type");
+	    }
+
+	} else if (expBin.op == Kind.REL_LE) {
+	    if (areIntegers(exp0, exp1)) {
+		return new LuaBoolean(toInteger(exp0) <= toInteger(exp1));
+	    } else if (areStrings(exp0, exp1)) {
+		return new LuaBoolean(exp0.toString().compareTo(exp1.toString()) <= 0 ? true : false);
+	    } else {
+		throw new TypeException("Invald type");
+	    }
+
+	} else if (expBin.op == Kind.REL_LT) {
+	    if (areIntegers(exp0, exp1)) {
+		return new LuaBoolean(toInteger(exp0) < toInteger(exp1));
+	    } else if (areStrings(exp0, exp1)) {
+		return new LuaBoolean(exp0.toString().compareTo(exp1.toString()) < 0 ? true : false);
+	    } else {
+		throw new TypeException("Invald type");
+	    }
+
+	} else {
+	    throw new IllegalArgumentException();
+	}
+
+    }
+
+    public boolean areIntegers(Object o1, Object o2) {
+	if (o1 instanceof LuaInt && o2 instanceof LuaInt)
+	    return true;
+	else
+	    return false;
+    }
+
+    public boolean areStrings(Object o1, Object o2) {
+	if (o1 instanceof LuaString && o2 instanceof LuaString)
+	    return true;
+	else
+	    return false;
     }
 
     @Override
@@ -87,7 +188,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitExpInt(ExpInt expInt, Object arg) {
-	throw new UnsupportedOperationException();
+	return new LuaInt(expInt.v);
     }
 
     @Override
@@ -120,13 +221,13 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	throw new UnsupportedOperationException();
     }
 
-    //visit block within chunk by visiting List<Stat>
+    // visit block within chunk by visiting List<Stat>
     @Override
     public Object visitBlock(Block block, Object arg) throws Exception {
 	int statCount = block.stats.size(); // get the count of the statements in a block
 	Object visitedStat = null;
-	//visit all the statements
-	for(int i=0;i<statCount;i++) {
+	// visit all the statements
+	for (int i = 0; i < statCount; i++) {
 	    Stat st = block.stats.get(i);
 	    visitedStat = st.visit(this, arg);
 	}
@@ -135,6 +236,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitStatBreak(StatBreak statBreak, Object arg, Object arg2) {
+	// throw exception
 	throw new UnsupportedOperationException();
     }
 
@@ -145,17 +247,34 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitStatGoto(StatGoto statGoto, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	throw new UnsupportedOperationException(statGoto.toString());
     }
 
     @Override
     public Object visitStatDo(StatDo statDo, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	Object visitedStatDo = statDo.b.visit(this, arg);
+	return visitedStatDo;
     }
 
     @Override
     public Object visitStatWhile(StatWhile statWhile, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	Object visitedStatWhile = null;
+
+	while (true) {
+	    Object condition = statWhile.e.visit(this, arg);
+	    if (condition != null)
+		break;
+	    try {
+		visitedStatWhile = statWhile.b.visit(this, arg);
+		if (visitedStatWhile != null) {
+		    break;
+		}
+	    } catch (Exception e) {
+		break;
+	    }
+	}
+
+	return visitedStatWhile;
     }
 
     @Override
@@ -165,7 +284,17 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitStatIf(StatIf statIf, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	for (int i = 0; i < statIf.es.size(); i++) {
+	    Object visit = statIf.es.get(i).visit(this, arg);
+
+	    if (visit != null) {
+		Object visit1 = statIf.bs.get(i).visit(this, arg);
+		if (visit1 != null)
+		    return visit1;
+		break;
+	    }
+	}
+	return null;
     }
 
     @Override
@@ -200,10 +329,15 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitRetStat(RetStat retStat, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	List<Object> list = new ArrayList<>();
+	for(Exp e:retStat.el) {
+	    Object obj = e.visit(this, arg);
+	    list.add(obj);
+	}
+	return list;
     }
 
-    //visit chunk
+    // visit chunk
     @Override
     public Object visitChunk(Chunk chunk, Object arg) throws Exception {
 	Object visitedChunk = chunk.block.visit(this, arg);
@@ -273,6 +407,24 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
     @Override
     public Object visitExpName(ExpName expName, Object arg) {
 	throw new UnsupportedOperationException();
+    }
+
+    public int toInteger(Object v) throws TypeException {
+	if (v instanceof LuaInt) {
+	    return ((LuaInt) v).intValue();
+	} else if (v instanceof LuaString) {
+	    return Integer.parseInt(v.toString());
+	} else {
+	    throw new TypeException("Cannot convert to int");
+	}
+    }
+
+    public boolean toBoolean(Object v) throws TypeException {
+	if (v instanceof LuaBoolean) {
+	    return ((LuaBoolean) v).value;
+	} else {
+	    throw new TypeException("Not a boolean");
+	}
     }
 
 }
