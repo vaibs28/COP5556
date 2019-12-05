@@ -85,10 +85,10 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitExpBin(ExpBinary expBin, Object arg) throws Exception {
-
+	stack.push("value");
 	Object exp0 = expBin.e0.visit(this, arg);
 	Object exp1 = expBin.e1.visit(this, arg);
-
+	stack.pop();
 	if (expBin.op == Kind.OP_PLUS) {
 	    return new LuaInt(toInteger(exp0) + toInteger(exp1));
 	} else if (expBin.op == Kind.OP_MINUS) {
@@ -183,7 +183,9 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitUnExp(ExpUnary unExp, Object arg) throws Exception {
+	stack.push("value");
 	Object visited = unExp.e.visit(this, arg);
+	stack.pop();
 	if (unExp.op == Kind.OP_MINUS) {
 	    return new LuaInt(-1 * toInteger(visited));
 	} else if (unExp.op == Kind.KW_not) {
@@ -199,6 +201,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	} else {
 	    throw new IllegalArgumentException("Invalid unary operator " + unExp.op);
 	}
+
     }
 
     @Override
@@ -215,12 +218,14 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
     public Object visitExpTable(ExpTable expTableConstr, Object arg) throws Exception {
 	LuaTable table = new LuaTable();
 	for (Field f : expTableConstr.fields) {
+	    stack.push("value");
 	    Object visited = f.visit(this, arg);
 	    if (visited instanceof TableKV) {
 		table.put((LuaValue) ((TableKV) visited).getKey(), (LuaValue) ((TableKV) visited).getValue());
 	    } else {
 		table.putImplicit((LuaValue) visited);
 	    }
+	    stack.pop();
 	}
 	return table;
     }
@@ -317,8 +322,11 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	throw new UnsupportedOperationException();
     }
 
-    private boolean asBoolean(Object visit) {
-	return visit instanceof LuaBoolean ? ((LuaBoolean) visit).value : !(visit instanceof LuaNil);
+    private boolean isBoolean(Object visit) {
+	if (visit instanceof LuaBoolean)
+	    return ((LuaBoolean) visit).value;
+	else
+	    return !(visit instanceof LuaNil);
     }
 
     @Override
@@ -327,7 +335,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	    stack.push("value");
 	    Object visit = statIf.es.get(i).visit(this, arg);
 	    stack.pop();
-	    if (asBoolean(visit)) {
+	    if (isBoolean(visit)) {
 		Object visit1 = statIf.bs.get(i).visit(this, arg);
 		if (visit1 != null)
 		    return visit1;
@@ -390,16 +398,19 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitFieldExpKey(FieldExpKey fieldExpKey, Object object) throws Exception {
+	stack.push("value");
 	Object key = fieldExpKey.key.visit(this, object);
 	Object value = fieldExpKey.value.visit(this, object);
+	stack.pop();
 	return new TableKV(key, value);
     }
 
     @Override
     public Object visitFieldNameKey(FieldNameKey fieldNameKey, Object arg) throws Exception {
-
+	stack.push("value");
 	Object key = fieldNameKey.name.visit(this, arg);
 	Object value = fieldNameKey.exp.visit(this, arg);
+	stack.pop();
 	return new TableKV(key, value);
     }
 
@@ -459,10 +470,10 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitExpTableLookup(ExpTableLookup expTableLookup, Object arg) throws Exception {
-
+	stack.push("value");
 	Object expTable = expTableLookup.table.visit(this, arg);
 	Object key = expTableLookup.key.visit(this, arg);
-
+	stack.pop();
 	if (!(expTable instanceof LuaTable))
 	    throw new TypeException("");
 	return ((LuaTable) expTable).get((LuaValue) key);
@@ -474,7 +485,9 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	Object functionName = expFunctionCall.f.visit(this, arg);
 	List<LuaValue> args = new ArrayList<>();
 	for (Exp v : expFunctionCall.args) {
+	    stack.push("value");
 	    args.add((LuaValue) v.visit(this, arg));
+	    stack.pop();
 	}
 
 	((JavaFunction) table.get((LuaString) functionName)).call(args);
