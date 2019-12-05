@@ -30,6 +30,7 @@ import cop5556fa19.AST.FuncName;
 import cop5556fa19.AST.Name;
 import cop5556fa19.AST.ParList;
 import cop5556fa19.AST.RetStat;
+import cop5556fa19.AST.Stat;
 import cop5556fa19.AST.StatAssign;
 import cop5556fa19.AST.StatBreak;
 import cop5556fa19.AST.StatDo;
@@ -119,9 +120,17 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	throw new UnsupportedOperationException();
     }
 
+    //visit block within chunk by visiting List<Stat>
     @Override
     public Object visitBlock(Block block, Object arg) throws Exception {
-	throw new UnsupportedOperationException();
+	int statCount = block.stats.size(); // get the count of the statements in a block
+	Object visitedStat = null;
+	//visit all the statements
+	for(int i=0;i<statCount;i++) {
+	    Stat st = block.stats.get(i);
+	    visitedStat = st.visit(this, arg);
+	}
+	return visitedStat;
     }
 
     @Override
@@ -194,9 +203,11 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	throw new UnsupportedOperationException();
     }
 
+    //visit chunk
     @Override
     public Object visitChunk(Chunk chunk, Object arg) throws Exception {
-	return null;
+	Object visitedChunk = chunk.block.visit(this, arg);
+	return visitedChunk;
     }
 
     @Override
