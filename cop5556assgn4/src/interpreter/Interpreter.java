@@ -49,6 +49,7 @@ public class Interpreter extends ASTVisitorAdapter{
 		//Perform static analysis to prepare for goto.  Uncomment after u
 		StaticAnalysis hg = new StaticAnalysis();
 		chunk.visit(hg,null);	
+		chunk.visit(hg, null);
 		//Interpret the program and return values returned from chunk.visit
 		List<LuaValue> vals = (List<LuaValue>) chunk.visit(this,_G);
 		return vals;

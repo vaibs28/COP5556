@@ -4,7 +4,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
-
 import cop5556fa19.Token;
 import cop5556fa19.Token.Kind;
 import cop5556fa19.AST.ASTVisitor;
@@ -58,6 +57,11 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
     @SuppressWarnings("serial")
     public static class StaticSemanticException extends Exception {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	public StaticSemanticException(Token first, String msg) {
 	    super(first.line + ":" + first.pos + " " + msg);
 	}
@@ -65,6 +69,11 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @SuppressWarnings("serial")
     public static class TypeException extends Exception {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	public TypeException(String msg) {
 	    super(msg);
@@ -89,6 +98,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	Object exp0 = expBin.e0.visit(this, arg);
 	Object exp1 = expBin.e1.visit(this, arg);
 	stack.pop();
+	System.out.println(expBin.op);
 	if (expBin.op == Kind.OP_PLUS) {
 	    return new LuaInt(toInteger(exp0) + toInteger(exp1));
 	} else if (expBin.op == Kind.OP_MINUS) {
@@ -279,41 +289,44 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitStatBreak(StatBreak statBreak, Object arg) throws Exception {
-	return null;
+	throw new BreakException();
     }
 
     @Override
     public Object visitStatGoto(StatGoto statGoto, Object arg) throws Exception {
-	throw new UnsupportedOperationException(statGoto.toString());
+	throw new GotoException(statGoto.label);
     }
 
     @Override
     public Object visitStatDo(StatDo statDo, Object arg) throws Exception {
 	try {
 	    return statDo.b.visit(this, arg);
-	} catch (Exception e) {
-	    throw e;
+	} catch (BreakException be) {
+	    if (count == 0)
+		return null;
+	    else
+		throw be;
 	}
     }
 
     @Override
     public Object visitStatWhile(StatWhile statWhile, Object arg) throws Exception {
 	Object visitedStatWhile = null;
-
+	count += 1;
 	while (true) {
 	    Object visited = statWhile.e.visit(this, arg);
-	    if (visited != null)
+	    if (!isBoolean(visited))
 		break;
 	    try {
 		visitedStatWhile = statWhile.b.visit(this, arg);
 		if (visitedStatWhile != null) {
 		    break;
 		}
-	    } catch (Exception e) {
+	    } catch (BreakException e) {
 		break;
 	    }
 	}
-
+	count -= 1;
 	return visitedStatWhile;
     }
 
@@ -506,9 +519,12 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
     @Override
     public Object visitExpName(ExpName expName, Object arg) {
-	LuaTable table = (LuaTable) arg;
-	LuaString l = new LuaString(expName.name);
-	return stack.peek().equals("value") ? table.get(l) : l;
+	LuaTable lt = (LuaTable) arg;
+	LuaString str = new LuaString(expName.name);
+	if (stack.peek().equals("value"))
+	    return lt.get(str);
+	else
+	    return str;
     }
 
     public int toInteger(Object v) throws TypeException {
@@ -591,9 +607,24 @@ class TableKV {
 }
 
 class GotoException extends Exception {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     final StatLabel statLabel;
 
-    private GotoException(StatLabel statLabel) {
+    GotoException(StatLabel statLabel) {
 	this.statLabel = statLabel;
+    }
+}
+
+class BreakException extends Exception {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
+    public BreakException() {
+	// TODO Auto-generated constructor stub
     }
 }
