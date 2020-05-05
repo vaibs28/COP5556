@@ -1,5 +1,7 @@
 # COP5556
 COP 5556 - Programming Language Principles Assignments
+Implementing the Scanner, Parser and Generating the Abstract Syntax Tree for a subset of Lua language.
+
 
 # Part 1
 Implement a scanner for a programming language with the following lexical structure:
